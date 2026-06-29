@@ -1,14 +1,13 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Nodes;
 using Anthropic;
+using LTSAgent.Backend.Core;
 
 namespace LTSAgent.Backend.Auth;
 
 public sealed class AuthConfig
 {
-    private readonly string ConfigPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-        ".ltsagent", "AuthConfig.json");
+    private readonly string ConfigPath = Path.Combine(AgentPaths.UserConfigDir, "AuthConfig.json");
 
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
     

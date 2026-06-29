@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using Anthropic.Models.Messages;
 using LTSAgent.Backend.Agent;
+using LTSAgent.Backend.Model;
 using LTSAgent.Backend.Tool;
 
 namespace LTSAgent.Backend.Prompt;
@@ -9,7 +10,7 @@ namespace LTSAgent.Backend.Prompt;
 /// Claude API 시스템 프롬프트 구성과 MessageCreateParams 생성을 담당
 /// 시스템 프롬프트는 최초 호출 시 생성되고 이후 캐싱
 /// </summary>
-public sealed class PromptBuilder(ToolRegistry ToolRegistry)
+public sealed class PromptBuilder(ToolRegistry ToolRegistry, ModelSettings ModelSettings)
 {
     /// <summary>빌더 체인의 각 섹션. 토큰 측정 시 특정 섹션을 제외할 수 있음</summary>
     [Flags]
@@ -31,17 +32,14 @@ public sealed class PromptBuilder(ToolRegistry ToolRegistry)
     /// </summary>
     public MessageCreateParams Build(AgentSession Session) => new()
     {
-        Model = "claude-opus-4-6",
-        MaxTokens = 1024,
-        CacheControl = new CacheControlEphemeral(),
-        System = new List<TextBlockParam> { new() { Text = BuildSystemPrompt(Session) } },
-        Messages = Session.Conversation.ToAnthropicMessages(),
-        Tools = ToolRegistry.GetAllSchemas().Select(S => (ToolUnion)S).ToList(),
-        Thinking = new ThinkingConfigAdaptive(),
-        OutputConfig = new OutputConfig()
-        {
-          Effort = Effort.High
-        }
+      Model = ModelSettings.Model,
+      MaxTokens = ModelSettings.MaxTokens,
+      CacheControl = new CacheControlEphemeral(),
+      System = new List<TextBlockParam> { new() { Text = BuildSystemPrompt(Session) } },
+      Messages = Session.Conversation.ToAnthropicMessages(),
+      Tools = ToolRegistry.GetAllSchemas().Select(S => (ToolUnion)S).ToList(),
+      Thinking = ModelSettings.GetThinking(),
+      OutputConfig = ModelSettings.GetEffort()
     };
     
     // ── 시스템 프롬프트 구성 ──
@@ -55,7 +53,7 @@ public sealed class PromptBuilder(ToolRegistry ToolRegistry)
     }
 
     /// <summary>각 섹션 메서드를 호출하고 결과를 결합하여 프롬프트 문자열을 생성</summary>
-    private string BuildInternal(Section Skip, AgentSession? Session)
+    private string BuildInternal(Section Skip, AgentSession Session)
     {
         StringBuilder Sb = new();
         

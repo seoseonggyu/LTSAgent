@@ -119,5 +119,5 @@ public class WebSearch(AuthConfig Auth) : AgentTool<WebSearch.Input>
     private sealed record SearchResultEntry(
         [property: JsonPropertyName("title")] string Title,
         [property: JsonPropertyName("url")] string Url,
-        [property: JsonPropertyName("page_age")] string? PageAge);
+        [property: JsonPropertyName("page_age")] string PageAge);
 }
