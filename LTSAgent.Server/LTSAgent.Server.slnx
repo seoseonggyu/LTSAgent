@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="LTSAgent.Backend/LTSAgent.Backend.csproj" />
+  <Project Path="LTSAgent.Frontend/LTSAgent.Frontend.csproj" />
+</Solution>
