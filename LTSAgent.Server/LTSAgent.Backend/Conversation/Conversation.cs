@@ -15,7 +15,7 @@ public sealed class Conversation
     private readonly List<MessageSpan> MessageSpans = [];
     
     // MessageSpan을 추가하고 반환
-    public MessageSpan AddMessageSpan(string Input)
+    public MessageSpan AddMessageSpan(UserInput Input)
     {
         MessageSpan MessageSpan = new() { UserInput = Input };
         MessageSpans.Add(MessageSpan);
