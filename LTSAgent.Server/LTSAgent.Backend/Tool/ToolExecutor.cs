@@ -1,5 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using LTSAgent.Backend.Agent;
+using LTSAgent.Backend.Chat;
 using LTSAgent.Backend.Conversation;
 using LTSAgent.Backend.Core;
 

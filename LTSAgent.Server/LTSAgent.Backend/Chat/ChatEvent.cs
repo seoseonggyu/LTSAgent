@@ -1,12 +1,15 @@
-﻿namespace LTSAgent.Backend.Core;
+﻿namespace LTSAgent.Backend.Chat;
 
 /// <summary>
 /// Agent에서 UI로 전달되는 스트리밍 이벤트
 /// </summary>
 public abstract record ChatEvent
 {
+    /// 사용자 메시지
+    public sealed record User(string Content) : ChatEvent;
+    
     // Claude의 텍스트 응답
-    public sealed record Text(string Content) : ChatEvent;
+    public sealed record Assistant(string Content) : ChatEvent;
     
     // Claude의 사고 과정(Extended Thinking) 응답
     public sealed record Thinking(string Content) : ChatEvent;

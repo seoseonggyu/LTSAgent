@@ -1,6 +1,6 @@
 ﻿using System.Text;
 using Anthropic.Models.Messages;
-using LTSAgent.Backend.Core;
+using LTSAgent.Backend.Chat;
 using Block = LTSAgent.Backend.Core.Block;
 
 namespace LTSAgent.Backend.Conversation;
@@ -146,7 +146,7 @@ public sealed class ApiStreamSpan
         {
             case ActiveBlock.Text when DeltaEvt.Delta.TryPickText(out TextDelta TextDelta):
                 TextBuffer.Append(TextDelta.Text);
-                return new ChatEvent.Text(TextDelta.Text);
+                return new ChatEvent.Assistant(TextDelta.Text);
             
             case ActiveBlock.Thinking when DeltaEvt.Delta.TryPickThinking(out ThinkingDelta ThinkingDelta):
                 ThinkingBuffer.Append(ThinkingDelta.Thinking);

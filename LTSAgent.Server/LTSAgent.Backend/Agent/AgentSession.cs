@@ -1,5 +1,5 @@
 ﻿using LTSAgent.Backend.Conversation;
-using LTSAgent.Backend.Core;
+using LTSAgent.Backend.Chat;
 
 namespace LTSAgent.Backend.Agent;
 

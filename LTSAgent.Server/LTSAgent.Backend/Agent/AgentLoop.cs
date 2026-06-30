@@ -1,7 +1,7 @@
 ﻿using Anthropic.Models.Messages;
 using LTSAgent.Backend.Auth;
 using LTSAgent.Backend.Conversation;
-using LTSAgent.Backend.Core;
+using LTSAgent.Backend.Chat;
 using LTSAgent.Backend.Prompt;
 using LTSAgent.Backend.Tool;
 using Block = LTSAgent.Backend.Core.Block;
