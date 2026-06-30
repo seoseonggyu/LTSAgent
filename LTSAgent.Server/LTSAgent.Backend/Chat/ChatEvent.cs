@@ -20,6 +20,9 @@ public abstract record ChatEvent
     // 도구 실행 결과
     public sealed record ToolEnd(string ToolUseId, string Name, string Result) : ChatEvent;
     
+    /// <summary>시스템 메시지입니다 (커맨드 결과, 에러 등).</summary>
+    public sealed record System(string Content) : ChatEvent;
+    
     // 스트림 종료
     public sealed record Done : ChatEvent;
 }

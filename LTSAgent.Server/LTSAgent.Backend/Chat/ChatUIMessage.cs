@@ -32,4 +32,7 @@ public abstract record ChatUIMessage
         // 완료 여부
         public bool bIsCompleted { get; init; }
     }
+    
+    /// <summary>시스템 메시지입니다.</summary>
+    public sealed record System(string Content) : ChatUIMessage;
 }

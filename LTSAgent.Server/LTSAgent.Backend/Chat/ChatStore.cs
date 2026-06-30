@@ -63,6 +63,12 @@ public sealed class ChatStore
                 break;
             }
 
+            case ChatEvent.System { Content: var Content }:
+            {
+                Messages.Add(new ChatUIMessage.System(Content));
+                break;
+            }
+            
             case ChatEvent.Done:
             {
                 ThinkingComplete();

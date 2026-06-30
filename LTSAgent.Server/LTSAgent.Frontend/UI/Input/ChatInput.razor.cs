@@ -1,3 +1,4 @@
+using LTSAgent.Backend.Conversation;
 using Microsoft.AspNetCore.Components;
 
 namespace LTSAgent.Frontend.UI.Input;
@@ -5,7 +6,7 @@ namespace LTSAgent.Frontend.UI.Input;
 public partial class ChatInput
 {
     /// <summary>메시지 전송 콜백입니다.</summary>
-    [Parameter] public EventCallback<string> OnSend { get; set; }
+    [Parameter] public EventCallback<UserInput> OnSend { get; set; }
 
     /// <summary>현재 입력 텍스트입니다.</summary>
     private string InputText = "";
