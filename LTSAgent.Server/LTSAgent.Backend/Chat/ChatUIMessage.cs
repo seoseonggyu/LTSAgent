@@ -1,4 +1,6 @@
-﻿namespace LTSAgent.Backend.Chat;
+﻿using System.Text.Json;
+
+namespace LTSAgent.Backend.Chat;
 
 /// <summary>
 /// UI에 표시되는 채팅 메시지
@@ -33,6 +35,44 @@ public abstract record ChatUIMessage
         public bool bIsCompleted { get; init; }
     }
     
-    /// <summary>시스템 메시지입니다.</summary>
+    // 도구 실행 메시지
+    public sealed record Tool(string Name, string Content) : ChatUIMessage
+    {
+        // Claude가 발급한 tool_use ID
+        public string ToolUseId { get; init; } = "";
+
+        // 도구 입력 파라미터(JSON)
+        public string Input { get; init; } = "";
+
+        // 도구 실행 시작 시간. UI에서 실시간 경과 시간을 계산
+        public DateTime StartTime { get; init; }
+
+        // 도구 실행 소요 최종 시간(초). 완료 후 확정
+        public double ElapsedSeconds { get; init; }
+
+        // 도구 실행 완료 여부
+        public bool bIsCompleted { get; init; }
+
+        // 입력 JSON에서 지정 필드의 문자열 값을 추출
+        public string GetInputField(string FieldName, string Fallback = "")
+        {
+            if (string.IsNullOrEmpty(Input))
+                return Fallback;
+
+            try
+            {
+                using JsonDocument Doc = JsonDocument.Parse(Input);
+                return Doc.RootElement.TryGetProperty(FieldName, out JsonElement Element)
+                    ? Element.GetString() ?? Fallback
+                    : Fallback;
+            }
+            catch
+            {
+                return Fallback;
+            }
+        }
+    }
+    
+    // 시스템 메시지
     public sealed record System(string Content) : ChatUIMessage;
 }
