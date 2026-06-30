@@ -17,8 +17,7 @@ public sealed class ChatStore
     /// </summary>
     public void Process(ChatEvent Evt)
     {
-        if (Evt is ChatEvent.Assistant or ChatEvent.Thinking)
-            bIsReceiving = true;
+        bIsReceiving = Evt is ChatEvent.User;
         
         switch (Evt)
         {
@@ -72,8 +71,6 @@ public sealed class ChatStore
             case ChatEvent.Done:
             {
                 ThinkingComplete();
-                bIsReceiving = false;
-                
                 break;
             }
         }
