@@ -1,0 +1,44 @@
+Blazor 렌더링 구조
+- 브라우저 화면이 나오기까지, Blazor는 어떻게 화면을 조립할까?
+- 마트료시카 인형처럼 바깥에서 안쪽으로, 겹겹이 감싸서 조립된다
+
+Blazor 프로젝트는 하나의 건물이다
+- 1. App.razor: 건물 외벽
+- 2. Routes.razor: 안내데스크
+- 3. MainLayout.razor: 복도, 엘리베이터, 로비
+- 4. Page: 각 방의 실제 내용
+- 5. wwwroot: 인테리어 자재 창고
+
+
+wwwroot
+- 정적 파일 보관 폴더: 건물의 인테리어 자재 창고 -> 벽지, 페인트, 조명처럼 꾸미는 재료들
+- CCS 파일, 이미지, 아이콘 등 브라우저에 그대로 전달되는 파일들
+- 서버에서 처리하지 않고 있는 그대로 브라우저에 내려줌
+- App.razor에서 <link>로 CSS를 연결하면 이 폴더를 참조
+
+App.razor
+- HTML 껍데기
+- <html>, <head>, <body> -> HTML의 기본 뼈대를 만듦
+- CSS 파일 연결, 폰트 로딩, 메타 태그 등 전체 페이지의 기반 설정
+- <body> 안에 <Routes />를 넣어서 Blazor에게 바톤 턴치
+
+Routes.razor
+- URL 라우팅
+- 브라우저 주소의 URL을 보고 어떤 페이지를 보여줄 지 결정
+- /chat -> Chat.razor,  /settings -> Settings.razor
+- 찾은 페이지를 MainLayout 안에 끼워넣음
+- 없는 URL이면 404 페이지 표시
+
+MainLayout.razor
+- 공통 레이아웃
+
+Page
+- 실제 내용
+- 페이지를 바꾸면 MainLayout은 그대로 Body만 교체
+
+수정 빈도 비교
+- wwwroot/ 거의 안 건드림
+- App.razor 거의 안 건드림
+- Routes.razor 거의 안 건드림
+- MainLayout.razor 가끔 수정
+- Page 매우 자주 수정

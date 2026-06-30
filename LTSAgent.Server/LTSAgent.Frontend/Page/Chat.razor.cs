@@ -23,12 +23,13 @@ public partial class Chat : IAsyncDisposable
 
     protected override void OnInitialized()
     {
-        AgentRunner.OnChatEvent += OnChatEvent;
+        AgentRunner.OnChatEvent = OnChatEvent;
     }
 
     public async ValueTask DisposeAsync()
     {
-        AgentRunner.OnChatEvent -= OnChatEvent;
+        if (AgentRunner.OnChatEvent == OnChatEvent)
+            AgentRunner.OnChatEvent = null;
         await ValueTask.CompletedTask;
     }
     

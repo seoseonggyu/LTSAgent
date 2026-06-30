@@ -1,0 +1,2 @@
+Message Response = await Auth.Client!.Messages.Create(Parameters);
+방식으로 메시지를 보내면 답장이 오는 데 오래걸린다. 이유는 답장에 대한 메시지를 처음부터 끝까지 한꺼번에 보내서 그렇다. 웹에서 우리가 물어보고 답이 오는 것을 보면 한 번에 오는게 아니라 단어씩 오는 것을 볼 수 있는데, 그 방식을 하기 위해서 CreateStreaming 방식으로 하면 된다.

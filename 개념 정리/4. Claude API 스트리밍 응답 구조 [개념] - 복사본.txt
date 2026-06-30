@@ -1,0 +1,98 @@
+스트리밍: 생성되는 즉시 전송
+- Claude가 토큰을 생성하는 즉시, 하나씩 실시간으로 전송한다.
+
+스트리밍을 택배 비유로 이해하기
+- 스트리밍: 택배 전체 배송 과정(한 번에 오는 게 아니라 여러 상자로 나눠서 순서대로 도착)
+- 콘텐츠 블록: 각각의 상자(텍스트 상자, 생각 상자, 도구 호출 상자 - 상자마다 종류가 다름)
+- 델타(Delta): 상자 안 내용물 조각(상자 안의 내용물이 한 번에 다 들어오지 않고, 조금씩 채워짐)
+
+블록을 나누는 이유
+- Claude의 응답은 한 종류가 아니다.
+- Thinking(추론 과정), Text(사용자 답변), ToolUse(도구 실행 요청) <-> 하나의 응답 안에 서로 다른 성격의 콘텐츠가 섞여서 온다.
+- Agent가 파싱을 편하게 할 수 있도록 만든 것임
+
+
+블록안에 Delta로 또 쪼개지는 이유
+- LLM은 토큰을 하나씩 생성한다.
+- ex) 오늘 -> 의 -> 날씨 -> 는 -> 맑 -> 습니다 -> .
+- 각 토큰이 순차적으로 생성됨 -- 전체가 한 번에 나오지 않음.
+- 한 블록이 수천 토큰이 될 수 있는데, 다 끝날 때까지 기다리면 스트리밍의 의미가 없다.
+- Delta: 같은 블록 안에서 아직 미완성인 내용이 조금씩 추가되는 것
+- 우리는 Delta를 파싱해서 사용자에게 보여주고 따로 Agent 안에서 저장을 하고 있으면 된다.
+
+
+3계층 구조
+- 1. 메시지 (전체 택배 배송) > 2. 콘텐츠 블록(각각의 상자) > 3. 델타(상자 안 내용물 조각)
+
+
+메시지 레벨 이벤트 3가지
+- 메시지 전체의 시작과 끝을 알려주는 이벤트들
+- START(RawMessageStartEvent): 배송 시작 알림 - 모델명, 역할, 초기 사용량
+- DELTA(RawMessageDeltaEvent): 배송 거의 완료 - stop_reason(end_turn(자연 종료), tool_use(도구 호출), max_tokens(토큰 제한)), 총 토큰 사용량
+- STOP(RawMessageStopEvent): 배송 완료
+
+콘텐츠 블록 이벤트 3가지
+- 각 상자(블록)의 열림과 닫힘을 알려주는 이벤트들
+- RawContentBlockStartEvent: 새 상자가 도착! 어떤 종류의 상자인지 알려줌
+- RawContentBlockDeltaEvent: 상자 안에 내용물이 조금 더 들어왔습니다.
+- RawContentBlockStopEvent: 이 상자는 다 채워졌습니다. 상자를 닫습니다.
+
+Delta 안에서 또 타입이 나뉜다?
+- RawContentBlockDeltaEvent 안의 delta 필드에 다시 4가지 세부 타입이 존재한다. 이유는 블록 타입마다 Delta의 성격이 완전히 다르기 때문이다.
+- TextDelta(텍스트 조각), ThinkingDelta(사고 조각), SignatureDelta(무결성 서명), InputJsonDelta(도구 JSON 조각)
+
+
+Delta 타입 정리표
+- 블록 타입 Thinking -> Delta 타입 (ThinkingDelta, SignatureDelta) -> 용도 (추론 과정 스트리밍, 무결성 검증 서명) -> Thinking 따로 옵션을 켜야 한다.
+- 블록 타입 Text -> Delta 타입 (TextDelta) -> 사용자 답변 스트리밍
+- 블록 타입 ToolUse -> Delta 타입 (InputJsonDelta) -> 도구 파라미터 JSON 스트리밍
+- 각 블록 타입에서 발생하는 Delta 타입이 정해져 있으므로, BlockStart에서 블록 타입을 확인하면 어떤 Delta가 올지 예측 가능!
+
+이벤트 흐름의 핵심 규칙
+- 1. 블록은 순서대로 하나씩 열리고 닫힘 - 동시에 여러 블록이 열리지 않는다
+- 2. 각 블록 안에서 Delta가 여러 번 반복 - 하나의 블록에 수십~수백 개의 Delta가 올 수 있음
+- 3. 블록이 닫혀야 다음 블록이 시작
+- 4. MessageDelta는 모든 블록이 끝난 후 마지막에 옴
+
+
+처리 패턴 핵심 요약
+- 1. BlockStart에서 블록 타입 확인 - 이후 올 Delta 종류를 예측하고 준비
+- 2. Delta에서 타입에 맞게 내용 누적 - TextDelta는 바로 출력, 나머지는 버퍼에 누적
+- 3. BlockStop에서 블록 완성 처리 - 특히 InputJsonDelta는 여기서 JSON 파싱!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
