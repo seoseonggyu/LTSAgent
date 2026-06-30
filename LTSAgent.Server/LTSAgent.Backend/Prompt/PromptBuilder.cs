@@ -2,6 +2,7 @@
 using Anthropic.Models.Messages;
 using LTSAgent.Backend.Agent;
 using LTSAgent.Backend.Model;
+using LTSAgent.Backend.Model.Models;
 using LTSAgent.Backend.Tool;
 
 namespace LTSAgent.Backend.Prompt;
@@ -38,8 +39,8 @@ public sealed class PromptBuilder(ToolRegistry ToolRegistry, ModelSettings Model
       System = new List<TextBlockParam> { new() { Text = BuildSystemPrompt(Session) } },
       Messages = Session.Conversation.ToAnthropicMessages(),
       Tools = ToolRegistry.GetAllSchemas().Select(S => (ToolUnion)S).ToList(),
-      Thinking = ModelSettings.GetThinking(),
-      OutputConfig = ModelSettings.GetEffort()
+      Thinking = ModelSettings.Model != Haiku45.ModelId ? ModelSettings.GetThinking() : null,
+      OutputConfig = ModelSettings.Model != Haiku45.ModelId ? ModelSettings.GetEffort() : null
     };
     
     // ── 시스템 프롬프트 구성 ──
