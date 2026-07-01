@@ -5,7 +5,9 @@ using System.Text.Json.Serialization;
 using Anthropic.Models.Messages;
 using Microsoft.Extensions.DependencyInjection;
 using LTSAgent.Backend.Agent;
+using LTSAgent.Backend.Mcp;
 using LTSAgent.Backend.Tool.Attributes;
+using LTSAgent.Backend.Tool.Tools;
 
 namespace LTSAgent.Backend.Tool;
 using AnthropicTool = Anthropic.Models.Messages.Tool;
@@ -78,6 +80,36 @@ public sealed class ToolRegistry(IServiceProvider ServiceProvider)
 
                 Tools[Attr.Name] = new ToolEntry(Instance, Schema);
             }
+        }
+    }
+    
+    /// <summary>
+    /// MCP 서버에서 받은 도구를 동적으로 등록
+    /// 도구 이름은 "mcp__{서버이름}__{도구이름}" 형식으로 등록
+    /// </summary>
+    public void RegisterMcpTools(string ServerName, McpClient Client, List<McpToolDefinition> McpTools)
+    {
+        foreach (McpToolDefinition Def in McpTools)
+        {
+            string RegistryName = $"mcp__{ServerName}__{Def.Name}";
+
+            // MCP에서 받은 inputSchema를 그대로 Anthropic InputSchema로 변환
+            InputSchema Schema = Def.InputSchema.Deserialize<InputSchema>() ?? new()
+            {
+                Properties = new Dictionary<string, JsonElement>(),
+                Required = new List<string>()
+            };
+
+            AnthropicTool ToolSchema = new()
+            {
+                Name = RegistryName,
+                Description = Def.Description,
+                InputSchema = Schema
+            };
+
+            McpProxyTool Proxy = new(Client, Def.Name);
+
+            Tools[RegistryName] = new ToolEntry(Proxy, ToolSchema);
         }
     }
 

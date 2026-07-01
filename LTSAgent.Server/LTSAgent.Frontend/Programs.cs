@@ -1,5 +1,6 @@
 ﻿using LTSAgent.Backend.Agent;
 using LTSAgent.Backend.Auth;
+using LTSAgent.Backend.Mcp;
 using LTSAgent.Backend.Model;
 using LTSAgent.Backend.Model.Models;
 using LTSAgent.Backend.Prompt;
@@ -55,6 +56,33 @@ App.Services.GetRequiredService<ModelRegistry>().DiscoverModels(typeof(Opus46).A
 // ── 설정 로드 ──
 App.Services.GetRequiredService<AuthConfig>().Load();
 App.Services.GetRequiredService<ModelSettings>().Load();
+
+// ── MCP 서버 연결 + 도구 등록 ──
+{
+    ToolRegistry Registry = App.Services.GetRequiredService<ToolRegistry>();
+    IHttpClientFactory HttpFactory = App.Services.GetRequiredService<IHttpClientFactory>();
+
+    foreach ((string Name, McpServerConfig Config) in McpConfig.Load())
+    {
+        HttpClient Http = HttpFactory.CreateClient();
+        McpClient Client = new(Http, Name, Config.Url);
+
+        try
+        {
+            await Client.InitializeAsync();
+
+            if (Client.HasTools)
+            {
+                List<McpToolDefinition> Tools = await Client.ListToolsAsync();
+                Registry.RegisterMcpTools(Name, Client, Tools);
+            }
+        }
+        catch (Exception Ex)
+        {
+            Console.WriteLine($"[MCP] {Name} 연결 실패: {Ex.Message}");
+        }
+    }
+}
 
 // ── 미들웨어 파이프라인 ──
 App.UseStaticFiles();
