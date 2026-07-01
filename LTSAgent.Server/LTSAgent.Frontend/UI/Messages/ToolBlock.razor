@@ -13,7 +13,7 @@
                 <span class="material-symbols-outlined @IconColorClass text-[14px] @(Message.bIsCompleted ? "" : "animate-tool-tap")">@Info.Icon</span>
             </div>
             <!-- 정보 바 -->
-            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded @BgClass border @BorderBarClass @TextColorClass hover:brightness-110 transition-all flex-1 max-w-lg shadow-sm @(Message.bIsCompleted ? "" : "shadow-lts-warning-glow")">
+            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded @BgClass border @BorderBarClass @TextColorClass hover:brightness-110 transition-all flex-1 max-w-lg shadow-sm @(Message.bIsCompleted ? "" : "shadow-ue-warning-glow")">
                 <div class="flex items-center gap-2 flex-1 min-w-0">
                     <span class="text-[10px] font-bold uppercase tracking-widest shrink-0">@Info.Label</span>
                     <span class="text-[10px] @Info.Font bg-black/20 px-1.5 py-0.5 rounded @ToolNameClass border @ToolNameBorderClass tracking-normal truncate" title="@Info.DisplayName">@Info.DisplayName</span>
@@ -27,19 +27,17 @@
 
         <!-- 도구 이름에 따라 적절한 렌더러를 선택합니다. -->
         <div class="ml-11 mt-2">
-            @switch (Message.Name)
+            @if (Message.Name is "web_search")
             {
-                case "web_search":
-                {
-                    <WebSearchBlock Message="Message"/>
-                    break;
-                }
-
-                case "web_fetch":
-                {
-                    <WebFetchBlock Message="Message"/>
-                    break;
-                }
+                <WebSearchBlock Message="Message"/>
+            }
+            else if (Message.Name is "web_fetch")
+            {
+                <WebFetchBlock Message="Message"/>
+            }
+            else if (CodeBlock.IsCodeTool(Message.Name))
+            {
+                <CodeBlock Message="Message"/>
             }
         </div>
     </details>
