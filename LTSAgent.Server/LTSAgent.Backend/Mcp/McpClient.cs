@@ -78,17 +78,17 @@ public class McpClient(HttpClient Http, string ServerName, string Url)
         };
 
         // TODO: 이 부분은 Unreal
-        /*
+
         // UE HTTP 서버는 Content-Length 헤더를 필수로 요구합니다.
         // PostAsJsonAsync는 chunked transfer를 사용할 수 있으므로,
         // 직접 직렬화하여 Content-Length가 포함된 요청을 보냅니다.
-
+        /*
         string JsonBody = JsonSerializer.Serialize(Request);
         using StringContent Content = new(JsonBody, System.Text.Encoding.UTF8, "application/json");
         HttpResponseMessage HttpResponse = await Http.PostAsync(Url, Content, Ct);
         HttpResponse.EnsureSuccessStatusCode();
 
-        JsonRpcResponse RpcResponse = await HttpResponse.Content.ReadFromJsonAsync<JsonRpcResponse>(Ct);
+        JsonRpcResponse? RpcResponse = await HttpResponse.Content.ReadFromJsonAsync<JsonRpcResponse>(Ct);
 
         if (RpcResponse is null)
             throw new InvalidOperationException($"[{ServerName}] 빈 응답을 받았습니다.");
@@ -100,20 +100,27 @@ public class McpClient(HttpClient Http, string ServerName, string Url)
                ?? throw new InvalidOperationException($"[{ServerName}] result 역직렬화에 실패했습니다.");
         */
 
-        string JsonBody = JsonSerializer.Serialize(Request);
-        HttpResponseMessage HttpResponse = await Http.PostAsJsonAsync(Url, JsonBody, Ct);
-        HttpResponse.EnsureSuccessStatusCode();
-        
-        JsonRpcResponse RpcResponse =
-            await HttpResponse.Content.ReadFromJsonAsync<JsonRpcResponse>(cancellationToken: Ct);
+        try
+        {
+            HttpResponseMessage HttpResponse = await Http.PostAsJsonAsync(Url, Request, Ct);
+            HttpResponse.EnsureSuccessStatusCode();
 
-        if (RpcResponse is null)
-            throw new InvalidOperationException($"[{ServerName}] 빈 응답을 받았습니다.");
+            JsonRpcResponse RpcResponse = await HttpResponse.Content.ReadFromJsonAsync<JsonRpcResponse>(cancellationToken: Ct);
 
-        if (!RpcResponse.IsSuccess)
-            throw new InvalidOperationException($"[{ServerName}] {RpcResponse.Error!.Message} (code: {RpcResponse.Error.Code})");
+            if (RpcResponse is null)
+                throw new InvalidOperationException($"[{ServerName}] 빈 응답을 받았습니다.");
 
-        return RpcResponse.Result!.Value.Deserialize<TResult>()
-               ?? throw new InvalidOperationException($"[{ServerName}] result 역직렬화에 실패했습니다.");
+            if (!RpcResponse.IsSuccess)
+                throw new InvalidOperationException(
+                    $"[{ServerName}] {RpcResponse.Error!.Message} (code: {RpcResponse.Error.Code})");
+
+            return RpcResponse.Result!.Value.Deserialize<TResult>()
+                   ?? throw new InvalidOperationException($"[{ServerName}] result 역직렬화에 실패했습니다.");
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"[CLIENT ERROR] 예외 발생: {e.Message}");  
+            throw;
+        }
     }
 }

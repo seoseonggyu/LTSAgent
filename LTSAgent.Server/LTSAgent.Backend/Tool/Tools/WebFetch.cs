@@ -11,7 +11,6 @@ namespace LTSAgent.Backend.Tool.Tools;
 
 /// <summary>
 /// 웹 페이지를 가져와 Markdown으로 변환한 뒤, AI 요약을 통해 사용자 프롬프트에 답변
-/// TODO: 여기서 설정 변경 필요
 /// </summary>
 [AgentTool("web_fetch", """
                         Fetches content from a specified URL and processes it using an AI model.
@@ -66,41 +65,73 @@ public class WebFetch(AuthConfig Auth, IHttpClientFactory HttpClientFactory) : A
     private static readonly ConcurrentDictionary<string, CacheEntry> Cache = new();
     
     /// <summary>신뢰 도메인 목록. 이 도메인의 컨텐츠는 비저작권 보호 프롬프트를 사용</summary>
-    // TODO: 여기서 설정 변경 필요
-    private static readonly HashSet<string> TrustedDomains =
+    // Revit / Autodesk 핵심 문서
+    private static readonly HashSet<string> RevitCoreDomains =
     [
-        "docs.unrealengine.com",
+        "help.autodesk.com",
+        "www.revitapidocs.com",
+        "aps.autodesk.com",
+        "thebuildingcoder.typepad.com",
+        "forums.autodesk.com",
+        "primer.dynamobim.org",
+        "docs.pyrevitlabs.io"
+    ];
+
+    // BIM / 업계 표준 (협업, 데이터 교환 관련)
+    private static readonly HashSet<string> BimStandardDomains =
+    [
+        "www.buildingsmart.org",
+        "construction.autodesk.com"
+    ];
+
+    // C# / .NET 핵심
+    private static readonly HashSet<string> DotNetDomains =
+    [
         "learn.microsoft.com",
-        "developer.mozilla.org",
+        "dotnet.microsoft.com",
+        "docs.microsoft.com"
+    ];
+
+    // 패키지 / 코드 참조
+    private static readonly HashSet<string> PackageAndCodeDomains =
+    [
+        "nuget.org",
+        "github.com",
         "docs.github.com",
-        "docs.python.org",
-        "docs.docker.com",
+        "stackoverflow.com"
+    ];
+
+    // 데이터 포맷 (JSON/XML 직렬화)
+    private static readonly HashSet<string> DataFormatDomains =
+    [
+        "www.newtonsoft.com",
+        "json.org"
+    ];
+
+    // 클라우드 / 외부 연동
+    private static readonly HashSet<string> CloudDomains =
+    [
         "docs.aws.amazon.com",
         "cloud.google.com",
-        "docs.oracle.com",
-        "docs.unity3d.com",
-        "docs.godotengine.org",
-        "kubernetes.io",
-        "react.dev",
-        "vuejs.org",
-        "angular.dev",
-        "nextjs.org",
-        "nuxt.com",
-        "svelte.dev",
-        "tailwindcss.com",
-        "typescriptlang.org",
-        "rust-lang.org",
-        "go.dev",
-        "dotnet.microsoft.com",
-        "kotlinlang.org",
-        "docs.swift.org",
-        "docs.flutter.dev",
-        "pytorch.org",
-        "numpy.org",
-        "pandas.pydata.org",
-        "graphql.org",
-        "www.terraform.io"
+        "docs.docker.com"
     ];
+
+    // 범용 웹/네트워킹 참조
+    private static readonly HashSet<string> GeneralWebDomains =
+    [
+        "developer.mozilla.org"
+    ];
+
+    // 전체 통합
+    private static readonly HashSet<string> TrustedDomains =
+        RevitCoreDomains
+            .Union(BimStandardDomains)
+            .Union(DotNetDomains)
+            .Union(PackageAndCodeDomains)
+            .Union(DataFormatDomains)
+            .Union(CloudDomains)
+            .Union(GeneralWebDomains)
+            .ToHashSet();
     
     /// <summary>HTML → Markdown 변환기</summary>
     private static readonly Converter MarkdownConverter = new(new Config

@@ -1,5 +1,6 @@
 using LTSAgent.Backend.Agent;
 using LTSAgent.Backend.Chat;
+using LTSAgent.Backend.Security;
 using Microsoft.AspNetCore.Components;
 
 namespace LTSAgent.Frontend.Page;
@@ -20,6 +21,9 @@ public partial class Chat : IAsyncDisposable
 
     // 플랜 사용량 패널을 토글 // TODO: 토클 사용량
     private void ToggleUsage() => bShowUsage = !bShowUsage;
+    
+    // 현재 대기 중인 권한 요청
+    private ChatEvent.ToolPermissionRequest PendingPermission;
 
     protected override void OnInitialized()
     {
@@ -39,9 +43,18 @@ public partial class Chat : IAsyncDisposable
     /// </summary>
     private Task OnChatEvent(ChatEvent Evt) => InvokeAsync(() =>
     {
-        AgentRunner.Store.Process(Evt);
-        
-        // 변경된 상태를 Blazor에 렌더링 요청
+        if (Evt is ChatEvent.ToolPermissionRequest Req)
+            PendingPermission = Req;
+        else
+            AgentRunner.Store.Process(Evt);
+
         StateHasChanged();
     });
+    
+    /// <summary>권한 다이얼로그에서 사용자가 결정했을 때 호출</summary>
+    private void HandlePermissionDecision(ToolPermission Decision)
+    {
+        PendingPermission?.Tcs.TrySetResult(Decision);
+        PendingPermission = null;
+    }
 }

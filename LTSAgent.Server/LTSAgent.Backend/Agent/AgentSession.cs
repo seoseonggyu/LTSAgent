@@ -1,5 +1,6 @@
 ﻿using LTSAgent.Backend.Conversation;
 using LTSAgent.Backend.Chat;
+using LTSAgent.Backend.Security;
 
 namespace LTSAgent.Backend.Agent;
 
@@ -8,11 +9,12 @@ namespace LTSAgent.Backend.Agent;
 /// </summary>
 public sealed class AgentSession(AgentLoop Loop)
 {
-    // 이 세션의 대화 히스토리
+    /// <summary> 이 세션의 대화 히스토리 </summary>
     public Conversation.Conversation Conversation { get; } = new();
     
-    /// <summary>
-    /// 사용자 메시지를 처리합니다.
-    /// </summary>
+    /// <summary>이 세션의 도구 실행 권한 엔진</summary>
+    public PermissionEngine PermissionEngine { get; } = new();
+    
+    /// <summary> 사용자 메시지를 처리 </summary>
     public IAsyncEnumerable<ChatEvent> ProcessMessage(UserInput Input) => Loop.RunAsync(Input, this);
 }

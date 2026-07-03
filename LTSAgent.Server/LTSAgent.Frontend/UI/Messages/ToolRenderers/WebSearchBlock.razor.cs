@@ -16,9 +16,12 @@ public partial class WebSearchBlock : ComponentBase
     [Parameter] public ChatUIMessage.Tool Message { get; set; } = default!;
 
     // 이 도구의 summary 바 메타데이터
-    public static ToolMeta GetInfo(ChatUIMessage.Tool Msg)
-        => new("language", "Web Search", "font-mono", Msg.GetInputField("query", "web_search"));
+    public static ToolMeta GetInfo(ChatUIMessage.Tool Msg) 
+    => new("language", "Web Search", "font-mono", ChatUIMessage.Tool.GetInputField(Msg.Input, "query", "web_search"));
     
+    // 권한 다이얼로그에 표시할 요약
+    public static string GetPermissionSummary(string InputJson)
+    => ChatUIMessage.Tool.GetInputField(InputJson, "query");
 
     // 검색 결과 항목
     private sealed record SearchResult(

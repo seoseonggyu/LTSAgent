@@ -53,15 +53,15 @@ public abstract record ChatUIMessage
         // 도구 실행 완료 여부
         public bool bIsCompleted { get; init; }
 
-        // 입력 JSON에서 지정 필드의 문자열 값을 추출
-        public string GetInputField(string FieldName, string Fallback = "")
-        {
-            if (string.IsNullOrEmpty(Input))
+        // JSON 문자열에서 지정 필드의 문자열 값을 추출
+        public static string GetInputField(string Json, string FieldName, string Fallback = "")
+        { 
+            if (string.IsNullOrEmpty(Json))
                 return Fallback;
 
             try
             {
-                using JsonDocument Doc = JsonDocument.Parse(Input);
+                using JsonDocument Doc = JsonDocument.Parse(Json);
                 return Doc.RootElement.TryGetProperty(FieldName, out JsonElement Element)
                     ? Element.GetString() ?? Fallback
                     : Fallback;

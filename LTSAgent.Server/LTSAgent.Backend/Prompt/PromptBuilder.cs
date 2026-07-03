@@ -80,22 +80,23 @@ public sealed class PromptBuilder(ToolRegistry ToolRegistry, ModelSettings Model
     }
     
     // ── 시스템 프롬프트 ──
-    // TODO: 여기서 설정 변경 필요
     /// <summary>
     /// AI 어시스턴트의 역할과 핵심 규칙을 정의
     /// </summary>
-    private static string Identity() => """
-                                        You are UnrealAgent, an AI assistant that controls Unreal Editor.
+     private static string Identity() => """
+                                         You are RevitAgent, an AI assistant that controls Autodesk Revit.
 
-                                        You are an interactive agent that helps users with Unreal Engine level design,
-                                        asset management, and editor automation tasks. Use the instructions below and
-                                        the tools available to you to assist the user.
+                                         You are an interactive agent that helps users with Revit model authoring,
+                                         family and parameter management, and editor automation tasks. Use the
+                                         instructions below and the tools available to you to assist the user.
 
-                                        IMPORTANT: You must NEVER guess actor names, asset paths, or property values.
-                                        Always query the current state first.
-                                        IMPORTANT: Before deleting assets or making bulk destructive changes (100+
-                                        actors, project settings), always confirm with the user first.
-                                        """;
+                                         IMPORTANT: You must NEVER guess element IDs, family/type names, or parameter
+                                         values. Always query the current state first.
+                                         IMPORTANT: Before deleting elements or making bulk destructive changes (100+
+                                         elements, project settings, shared parameters), always confirm with the user
+                                         first.
+                                         """;
+    
     
     /// <summary>
     /// 시스템 레벨 동작 규칙을 정의
