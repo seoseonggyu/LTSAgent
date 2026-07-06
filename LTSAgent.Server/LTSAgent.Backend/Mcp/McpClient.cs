@@ -100,27 +100,21 @@ public class McpClient(HttpClient Http, string ServerName, string Url)
                ?? throw new InvalidOperationException($"[{ServerName}] result 역직렬화에 실패했습니다.");
         */
 
-        try
-        {
-            HttpResponseMessage HttpResponse = await Http.PostAsJsonAsync(Url, Request, Ct);
-            HttpResponse.EnsureSuccessStatusCode();
 
-            JsonRpcResponse RpcResponse = await HttpResponse.Content.ReadFromJsonAsync<JsonRpcResponse>(cancellationToken: Ct);
+        HttpResponseMessage HttpResponse = await Http.PostAsJsonAsync(Url, Request, Ct);
+        HttpResponse.EnsureSuccessStatusCode();
 
-            if (RpcResponse is null)
-                throw new InvalidOperationException($"[{ServerName}] 빈 응답을 받았습니다.");
+        JsonRpcResponse RpcResponse =
+            await HttpResponse.Content.ReadFromJsonAsync<JsonRpcResponse>(cancellationToken: Ct);
 
-            if (!RpcResponse.IsSuccess)
-                throw new InvalidOperationException(
-                    $"[{ServerName}] {RpcResponse.Error!.Message} (code: {RpcResponse.Error.Code})");
+        if (RpcResponse is null)
+            throw new InvalidOperationException($"[{ServerName}] 빈 응답을 받았습니다.");
 
-            return RpcResponse.Result!.Value.Deserialize<TResult>()
-                   ?? throw new InvalidOperationException($"[{ServerName}] result 역직렬화에 실패했습니다.");
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine($"[CLIENT ERROR] 예외 발생: {e.Message}");  
-            throw;
-        }
+        if (!RpcResponse.IsSuccess)
+            throw new InvalidOperationException(
+                $"[{ServerName}] {RpcResponse.Error!.Message} (code: {RpcResponse.Error.Code})");
+
+        return RpcResponse.Result!.Value.Deserialize<TResult>()
+               ?? throw new InvalidOperationException($"[{ServerName}] result 역직렬화에 실패했습니다.");
     }
 }

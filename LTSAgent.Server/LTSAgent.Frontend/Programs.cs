@@ -1,4 +1,5 @@
 ﻿using LTSAgent.Backend.Agent;
+using LTSAgent.Backend.Agent.Middleware;
 using LTSAgent.Backend.Auth;
 using LTSAgent.Backend.Command;
 using LTSAgent.Backend.Command.Commands;
@@ -50,6 +51,9 @@ Builder.Services.AddSingleton<CommandRegistry>();
 // ── Claude 모델 레지스트리 & 런타임 설정 ──
 Builder.Services.AddSingleton<ModelRegistry>();
 Builder.Services.AddSingleton<ModelSettings>();
+
+// ── Agent 미들웨어 파이프라인 ──
+Builder.Services.AddSingleton<SlashCommandMiddleware>();
 
 // 여기까지 서비스 등록 단계. Build() 이후는 미들웨어/라우팅 설정 단계입니다.
 WebApplication App = Builder.Build();
