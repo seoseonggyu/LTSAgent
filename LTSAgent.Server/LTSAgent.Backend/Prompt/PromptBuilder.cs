@@ -26,6 +26,7 @@ public sealed class PromptBuilder(ToolRegistry ToolRegistry, ModelSettings Model
         ToneAndStyle = 1 << 4,
         OutputEfficiency = 1 << 5,
         ModeOverride = 1 << 6,
+        RevitAgentMd  = 1 << 7
     }
 
     // ── API 파라미터 생성 ──
@@ -67,6 +68,13 @@ public sealed class PromptBuilder(ToolRegistry ToolRegistry, ModelSettings Model
 
         if (!Skip.HasFlag(Section.System))
             Sb.AppendLine(System());
+        
+        if (!Skip.HasFlag(Section.RevitAgentMd))
+        {
+            string? Md = RevitAgentMd();
+            if (Md is not null)
+                Sb.AppendLine(Md);
+        }
 
         if (!Skip.HasFlag(Section.ModeOverride))
         {
@@ -323,4 +331,29 @@ public sealed class PromptBuilder(ToolRegistry ToolRegistry, ModelSettings Model
 
         _ => null
     };
+    
+    /// <summary>
+    /// REVITAGENT.md 프로젝트 지침을 반환. 파일이 없으면 null을 반환합니다.
+    /// </summary>
+    private static string? RevitAgentMd()
+    {
+        string FilePath = Path.Combine(AgentPaths.RootPath, "REVITAGENT.md"); // TODO: 루트 및 설정 필여
+        if (!File.Exists(FilePath))
+            return null;
+        
+        string Content = File.ReadAllText(FilePath).Trim();
+        if (string.IsNullOrEmpty(Content))
+            return null;
+        
+        return $"""
+                <system-reminder>
+                # UNREALAGENT.md
+                Project instructions are shown below. Be sure to adhere to these instructions.
+                IMPORTANT: These instructions OVERRIDE any default behavior and you MUST follow
+                them exactly as written.
+
+                {Content}
+                </system-reminder>
+                """;
+    }
 }
