@@ -31,6 +31,6 @@ public partial class WebFetchBlock : ComponentBase
     private static string GetDomain(ChatUIMessage.Tool Msg)
     {
         string Url = ChatUIMessage.Tool.GetInputField(Msg.Input, "url");
-        return Uri.TryCreate(Url, UriKind.Absolute, out Uri? Parsed) ? Parsed.Host : Url;
+        return Uri.TryCreate(Url, UriKind.Absolute, out Uri Parsed) ? Parsed.Host : Url;
     }
 }

@@ -29,8 +29,11 @@ public abstract record ChatEvent
         public TaskCompletionSource<ToolPermission> Tcs { get; } = new();
     }
     
-    /// <summary>시스템 메시지입니다 (커맨드 결과, 에러 등).</summary>
+    /// <summary>시스템 메시지 (커맨드 결과, 에러 등).</summary>
     public sealed record System(string Content) : ChatEvent;
+    
+    /// <summary>커맨드 메시지 </summary>
+    public sealed record Command(string Name, string Argument) : ChatEvent;
     
     // 스트림 종료
     public sealed record Done : ChatEvent;

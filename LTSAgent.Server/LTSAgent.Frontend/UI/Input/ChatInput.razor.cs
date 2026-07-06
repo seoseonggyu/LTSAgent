@@ -17,7 +17,7 @@ public partial class ChatInput : JsComponentBase
     private ElementReference TextAreaRef;
 
     /// <summary>.NET에서 JS가 호출할 수 있는 참조입니다.</summary>
-    private DotNetObjectReference<ChatInput>? DotNetRef;
+    private DotNetObjectReference<ChatInput> DotNetRef;
 
     /// <summary>모드 스위처 컴포넌트 참조입니다.</summary>
     private ModeSwitcher ModeSwitcherRef = null!;

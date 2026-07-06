@@ -100,6 +100,16 @@ public sealed class ChatStore
                 break;
             }
             
+            case ChatEvent.Command { Name: var Name, Argument: var Argument }:
+            {
+                if (Name.Equals("Clear", StringComparison.OrdinalIgnoreCase))
+                {
+                    Messages.Clear();
+                }
+                
+                break;
+            }
+            
             case ChatEvent.Done:
             {
                 ThinkingComplete();

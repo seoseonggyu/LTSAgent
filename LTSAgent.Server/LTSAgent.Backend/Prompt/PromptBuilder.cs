@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using Anthropic.Models.Messages;
 using LTSAgent.Backend.Agent;
+using LTSAgent.Backend.Core;
 using LTSAgent.Backend.Mode;
 using LTSAgent.Backend.Model;
 using LTSAgent.Backend.Model.Models;
@@ -71,14 +72,14 @@ public sealed class PromptBuilder(ToolRegistry ToolRegistry, ModelSettings Model
         
         if (!Skip.HasFlag(Section.RevitAgentMd))
         {
-            string? Md = RevitAgentMd();
+            string Md = RevitAgentMd();
             if (Md is not null)
                 Sb.AppendLine(Md);
         }
 
         if (!Skip.HasFlag(Section.ModeOverride))
         {
-            string? ModeSec = ModeSection(Mode);
+            string ModeSec = ModeSection(Mode);
 
             if (ModeSec is not null)
                 Sb.AppendLine(ModeSec);
@@ -198,7 +199,7 @@ public sealed class PromptBuilder(ToolRegistry ToolRegistry, ModelSettings Model
     /// <summary>
     /// 모드별 시스템 프롬프트 오버라이드를 반환. Normal 모드는 null.
     /// </summary>
-    private static string? ModeSection(AgentMode Mode) => Mode switch
+    private static string ModeSection(AgentMode Mode) => Mode switch
     {
         AgentMode.Plan => """
                               <system-reminder>
@@ -335,25 +336,8 @@ public sealed class PromptBuilder(ToolRegistry ToolRegistry, ModelSettings Model
     /// <summary>
     /// REVITAGENT.md 프로젝트 지침을 반환. 파일이 없으면 null을 반환합니다.
     /// </summary>
-    private static string? RevitAgentMd()
+    private static string RevitAgentMd()
     {
-        string FilePath = Path.Combine(AgentPaths.RootPath, "REVITAGENT.md"); // TODO: 루트 및 설정 필여
-        if (!File.Exists(FilePath))
-            return null;
-        
-        string Content = File.ReadAllText(FilePath).Trim();
-        if (string.IsNullOrEmpty(Content))
-            return null;
-        
-        return $"""
-                <system-reminder>
-                # UNREALAGENT.md
-                Project instructions are shown below. Be sure to adhere to these instructions.
-                IMPORTANT: These instructions OVERRIDE any default behavior and you MUST follow
-                them exactly as written.
-
-                {Content}
-                </system-reminder>
-                """;
+        return null;
     }
 }

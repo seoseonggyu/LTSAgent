@@ -1,5 +1,7 @@
 ﻿using LTSAgent.Backend.Agent;
 using LTSAgent.Backend.Auth;
+using LTSAgent.Backend.Command;
+using LTSAgent.Backend.Command.Commands;
 using LTSAgent.Backend.Mcp;
 using LTSAgent.Backend.Model;
 using LTSAgent.Backend.Model.Models;
@@ -42,6 +44,9 @@ Builder.Services.AddSingleton<PromptBuilder>();
 Builder.Services.AddSingleton<ToolRegistry>();
 Builder.Services.AddSingleton<ToolExecutor>();
 
+// ── Command 모듈 ──
+Builder.Services.AddSingleton<CommandRegistry>();
+
 // ── Claude 모델 레지스트리 & 런타임 설정 ──
 Builder.Services.AddSingleton<ModelRegistry>();
 Builder.Services.AddSingleton<ModelSettings>();
@@ -52,6 +57,7 @@ WebApplication App = Builder.Build();
 // ── 어트리뷰트 기반 자동 스캔 ──
 App.Services.GetRequiredService<ToolRegistry>().DiscoverTools(typeof(WebSearch).Assembly);
 App.Services.GetRequiredService<ModelRegistry>().DiscoverModels(typeof(Opus46).Assembly);
+App.Services.GetRequiredService<CommandRegistry>().DiscoverCommands(typeof(ClearCommand).Assembly);
 
 // ── 설정 로드 ──
 App.Services.GetRequiredService<AuthConfig>().Load();
