@@ -1,5 +1,6 @@
 ﻿using LTSAgent.Backend.Conversation;
 using LTSAgent.Backend.Chat;
+using LTSAgent.Backend.Mode;
 using LTSAgent.Backend.Security;
 
 namespace LTSAgent.Backend.Agent;
@@ -17,4 +18,7 @@ public sealed class AgentSession(AgentLoop Loop)
     
     /// <summary> 사용자 메시지를 처리 </summary>
     public IAsyncEnumerable<ChatEvent> ProcessMessage(UserInput Input) => Loop.RunAsync(Input, this);
+    
+    /// <summary>현재 에이전트 모드 </summary>
+    public AgentMode Mode { get; set; } = AgentMode.Normal;
 }
