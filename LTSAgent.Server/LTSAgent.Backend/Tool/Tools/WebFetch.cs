@@ -30,41 +30,41 @@ namespace LTSAgent.Backend.Tool.Tools;
                         """)]
 public class WebFetch(AuthConfig Auth, IHttpClientFactory HttpClientFactory) : AgentTool<WebFetch.Input>
 {
-    /// <summary>web_fetch 도구의 입력 파라미터</summary>
+    /// <summary> web_fetch 도구의 입력 파라미터 </summary>
     public sealed record Input(
         [property: JsonPropertyName("url")]
         [property: Description("The URL to fetch content from")]
         string Url,
-
         [property: JsonPropertyName("prompt")]
-        [property: Description("Instructions describing what information to extract or summarize from the fetched page")]
+        [property:
+            Description("Instructions describing what information to extract or summarize from the fetched page")]
         string Prompt);
-    
-    /// <summary>URL 최대 길이</summary>
+
+    /// <summary> URL 최대 길이 </summary>
     private const int MaxUrlLength = 2_000;
 
-    /// <summary>HTTP 응답 최대 크기 (10MB).</summary>
+    /// <summary> HTTP 응답 최대 크기 (10MB) </summary>
     private const int MaxResponseBytes = 10 * 1024 * 1024;
 
-    /// <summary>컨텐츠 자르기 임계값 (100K자).</summary>
+    /// <summary> 컨텐츠 자르기 임계값 (100K자) </summary>
     private const int MaxContentChars = 100_000;
-    
-    /// <summary>캐시 TTL (15분).</summary>
+
+    /// <summary> 캐시 TTL (15분) </summary>
     private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(15);
-    
-    /// <summary>캐시 최대 크기 (50MB).</summary>
+
+    /// <summary> 캐시 최대 크기 (50MB) </summary>
     private const long MaxCacheBytes = 50 * 1024 * 1024;
-    
-    /// <summary>Haiku 요약 최대 출력 토큰.</summary>
+
+    /// <summary> Haiku 요약 최대 출력 토큰 </summary>
     private const int SummaryMaxTokens = 4096;
-    
-    /// <summary>캐시 항목</summary>
+
+    /// <summary> 캐시 항목 </summary>
     private sealed record CacheEntry(string Content, DateTime ExpiresAt, long SizeBytes);
-    
-    /// <summary>URL → (컨텐츠, 만료시각) LRU 캐시</summary>
+
+    /// <summary> URL → (컨텐츠, 만료시각) LRU 캐시 </summary>
     private static readonly ConcurrentDictionary<string, CacheEntry> Cache = new();
-    
-    /// <summary>신뢰 도메인 목록. 이 도메인의 컨텐츠는 비저작권 보호 프롬프트를 사용</summary>
+
+    /// <summary> 신뢰 도메인 목록. 이 도메인의 컨텐츠는 비저작권 보호 프롬프트를 사용 </summary>
     // Revit / Autodesk 핵심 문서
     private static readonly HashSet<string> RevitCoreDomains =
     [
@@ -132,33 +132,31 @@ public class WebFetch(AuthConfig Auth, IHttpClientFactory HttpClientFactory) : A
             .Union(CloudDomains)
             .Union(GeneralWebDomains)
             .ToHashSet();
-    
-    /// <summary>HTML → Markdown 변환기</summary>
+
+    /// <summary> HTML → Markdown 변환기 </summary>
     private static readonly Converter MarkdownConverter = new(new Config
     {
-        GithubFlavored = true,
-        RemoveComments = true,
-        SmartHrefHandling = true
+        Flavor = Config.MarkdownFlavor.GitHub,
+        Formatting = { RemoveComments = true },
+        Links = { SmartHref = true }
     });
 
-    /// <summary>
-    /// URL에서 컨텐츠를 가져와 AI 요약을 수행
-    /// </summary>
+    /// <summary> URL에서 컨텐츠를 가져와 AI 요약을 수행 </summary>
     protected override async Task<ToolResult> ExecuteAsync(Input Args, AgentSession Session, CancellationToken Ct)
     {
         // 1. 인증 검증
         if (Auth.Client is null)
             return ToolResult.Error("Authentication is not configured.");
-        
+
         // 2. URL 검증 및 HTTPS 승격
         string ValidatedUrl = ValidateUrl(Args.Url, out string UrlError);
         if (ValidatedUrl is null)
             return ToolResult.Error(UrlError!);
-        
+
         // 3. 캐시 조회 — 히트 시 Fetch 건너뛰고 바로 요약
         if (TryGetCached(ValidatedUrl, out string CachedContent))
             return await ApplyWithHaikuAsync(CachedContent!, Args.Prompt, ValidatedUrl, Ct);
-        
+
         // 4. HTTP Fetch
         string Content;
         try
@@ -173,67 +171,63 @@ public class WebFetch(AuthConfig Auth, IHttpClientFactory HttpClientFactory) : A
         {
             return ToolResult.Error($"HTTP request failed: {Ex.Message}");
         }
-        
+
         // 5. 캐시 저장
         SetCache(ValidatedUrl, Content);
-        
+
         // 6. AI 요약
         return await ApplyWithHaikuAsync(Content, Args.Prompt, ValidatedUrl, Ct);
     }
 
-    /// <summary>
-    /// URL을 검증하고 HTTPS로 승격. 실패 시 null과 에러 메시지를 반환
-    /// </summary>
+    /// <summary> URL을 검증하고 HTTPS로 승격. 실패 시 null과 에러 메시지를 반환 </summary>
     private static string ValidateUrl(string RawUrl, out string Error)
     {
         Error = null;
-        
+
         // 빈 URL 차단
         if (string.IsNullOrWhiteSpace(RawUrl))
         {
             Error = "URL is empty.";
             return null;
         }
-        
+
         // 길이 제한
         if (RawUrl.Length > MaxUrlLength)
         {
             Error = $"URL is too long (max {MaxUrlLength} characters).";
             return null;
         }
-        
+
         // HTTP → HTTPS 승격
         string Url = RawUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
             ? "https://" + RawUrl[7..]
             : RawUrl;
-        
+
         // URL 형식 검증
         if (!Uri.TryCreate(Url, UriKind.Absolute, out Uri Parsed))
         {
             Error = $"Invalid URL: {RawUrl}";
             return null;
         }
-        
+
         // HTTPS만 허용 (ftp:// 등 차단)
         if (Parsed.Scheme != "https")
         {
             Error = "Only HTTPS URLs are supported.";
             return null;
         }
-        
+
         // 인증 정보 포함 차단 (예: https://user:pass@host)
         if (!string.IsNullOrEmpty(Parsed.UserInfo))
         {
             Error = "URLs with credentials are not supported.";
             return null;
         }
-        
+
         return Url;
     }
-    
-    /// <summary>
-    /// 캐시에서 컨텐츠를 조회. 만료된 항목은 제거
-    /// </summary>
+
+    /// <summary> 캐시에서 컨텐츠를 조회. 만료된 항목은 제거 </summary>
     private static bool TryGetCached(string Url, out string Content)
     {
         if (Cache.TryGetValue(Url, out CacheEntry Entry) && Entry.ExpiresAt > DateTime.UtcNow)
@@ -253,70 +247,64 @@ public class WebFetch(AuthConfig Auth, IHttpClientFactory HttpClientFactory) : A
     private async Task<string> FetchAsync(string Url, CancellationToken Ct)
     {
         HttpClient Client = HttpClientFactory.CreateClient("WebFetch");
-        
+
         // 스트리밍으로 크기 제한을 적용
         using HttpResponseMessage Response = await Client.GetAsync(Url, HttpCompletionOption.ResponseHeadersRead, Ct);
         Response.EnsureSuccessStatusCode();
-        
+
         string ContentType = Response.Content.Headers.ContentType?.MediaType;
-        
+
         // 비텍스트 컨텐츠는 거부
         bool bIsText = ContentType is null
                        || ContentType.StartsWith("text/", StringComparison.OrdinalIgnoreCase)
                        || ContentType.Contains("json", StringComparison.OrdinalIgnoreCase)
                        || ContentType.Contains("xml", StringComparison.OrdinalIgnoreCase);
-        
+
         if (!bIsText)
             throw new HttpRequestException($"Non-text content type: {ContentType}");
-        
+
         // 크기 제한을 적용하면서 읽음
         await using Stream Stream = await Response.Content.ReadAsStreamAsync(Ct);
         using StreamReader Reader = new(Stream);
         char[] Buffer = new char[MaxResponseBytes];
         int TotalRead = 0;
         int Read;
-        
+
         while (TotalRead < Buffer.Length &&
                (Read = await Reader.ReadAsync(Buffer.AsMemory(TotalRead, Buffer.Length - TotalRead), Ct)) > 0)
         {
             TotalRead += Read;
         }
-        
+
         string RawContent = new(Buffer, 0, TotalRead);
-        
+
         // text/html이면 Markdown으로 변니다.
         if (ContentType is not null &&
             ContentType.Contains("html", StringComparison.OrdinalIgnoreCase))
         {
             return ConvertToMarkdown(RawContent);
         }
-        
+
         return RawContent;
     }
-    
-    /// <summary>
-    /// HTML을 Markdown으로 변환
-    /// </summary>
+
+    /// <summary> HTML을 Markdown으로 변환 </summary>
     private static string ConvertToMarkdown(string Html)
     {
         return MarkdownConverter.Convert(Html);
     }
-    
-    /// <summary>
-    /// 컨텐츠를 캐시에 저장하고, 만료된 항목을 정리
-    /// </summary>
+
+    /// <summary> 컨텐츠를 캐시에 저장하고, 만료된 항목을 정리 </summary>
     private static void SetCache(string Url, string Content)
     {
         long SizeBytes = Content.Length * sizeof(char);
         CacheEntry Entry = new(Content, DateTime.UtcNow.Add(CacheTtl), SizeBytes);
         Cache[Url] = Entry;
-        
+
         CleanExpired();
     }
-    
-    /// <summary>
-    /// 만료된 캐시 항목을 제거하고, 총 크기가 제한을 초과하면 오래된 것부터 제거
-    /// </summary>
+
+    /// <summary> 만료된 캐시 항목을 제거하고, 총 크기가 제한을 초과하면 오래된 것부터 제거 </summary>
     private static void CleanExpired()
     {
         DateTime Now = DateTime.UtcNow;
@@ -355,16 +343,16 @@ public class WebFetch(AuthConfig Auth, IHttpClientFactory HttpClientFactory) : A
     {
         // 1. 신뢰 도메인 여부 확인
         bool bIsTrusted = IsTrustedDomain(Url);
-        
+
         // 2. 100K자 초과 시 자르기
         bool bTruncated = Content.Length > MaxContentChars;
         if (bTruncated)
             Content = Content[..MaxContentChars] + "\n\n[Content truncated due to length...]";
-        
+
         // 3. 신뢰 도메인 + 100K 미만이면 원문 그대로 반환 (Haiku 호출 생략)
         if (bIsTrusted && !bTruncated)
             return ToolResult.Success($"Web page content:\n---\n{Content}\n---");
-        
+
         // 4. 저작권 보호 프롬프트 구성 (신뢰/비신뢰에 따라 다른 지침)
         string CopyrightGuidance = bIsTrusted
             ? "Provide a concise response based on the content above. Include relevant details, code examples, and documentation excerpts as needed."
@@ -374,7 +362,7 @@ public class WebFetch(AuthConfig Auth, IHttpClientFactory HttpClientFactory) : A
                - Use quotation marks for exact language from articles; any language outside of the quotation should never be word-for-word the same.
                - Never produce or reproduce exact song lyrics.
               """;
-        
+
         // 5. 페이지 내용 + 사용자 프롬프트 + 저작권 지침을 합쳐서 Haiku에게 전달
         string UserPrompt = $"""
                              Web page content:
@@ -386,7 +374,7 @@ public class WebFetch(AuthConfig Auth, IHttpClientFactory HttpClientFactory) : A
 
                              {CopyrightGuidance}
                              """;
-        
+
         try
         {
             // 6. Haiku 4.5 서브 호출로 요약 생성
@@ -408,7 +396,11 @@ public class WebFetch(AuthConfig Auth, IHttpClientFactory HttpClientFactory) : A
             // 7. 응답에서 텍스트 블록만 추출
             string ResultText = string.Join("", Response.Content
                 .Where(B => B.TryPickText(out _))
-                .Select(B => { B.TryPickText(out TextBlock T); return T!.Text; }));
+                .Select(B =>
+                {
+                    B.TryPickText(out TextBlock T);
+                    return T!.Text;
+                }));
 
             return ToolResult.Success(ResultText);
         }
@@ -417,10 +409,8 @@ public class WebFetch(AuthConfig Auth, IHttpClientFactory HttpClientFactory) : A
             return ToolResult.Error($"AI summarization failed: {Ex.Message}");
         }
     }
-    
-    /// <summary>
-    /// URL이 신뢰 도메인에 속하는지 확인
-    /// </summary>
+
+    /// <summary> URL이 신뢰 도메인에 속하는지 확인 </summary>
     private static bool IsTrustedDomain(string Url)
     {
         if (!Uri.TryCreate(Url, UriKind.Absolute, out Uri Parsed))

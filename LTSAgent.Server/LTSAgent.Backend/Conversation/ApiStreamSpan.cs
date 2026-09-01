@@ -6,10 +6,10 @@ using Block = LTSAgent.Backend.Core.Block;
 namespace LTSAgent.Backend.Conversation;
 
 /// <summary>
-/// API 호출 1회의 스트리밍 응답을 파싱하고 누적
+/// 사용자 API 호출 1회의 스트리밍 응답을 파싱하고 누적 => AI의 답변을 파싱해서 저장
 /// Process()로 이벤트를 먹이고, Complete()로 결과를 확정
 /// </summary>
-public sealed class ApiStreamSpan
+public class ApiStreamSpan
 {
     /// <summary>
     /// API 스트리밍 완료 후 다음 행동을 나타내는 판별 유니온
@@ -17,17 +17,17 @@ public sealed class ApiStreamSpan
     /// </summary>
     public abstract record Result
     {
-        // 응답/사고가 잘려서 이어서 생성해야 합니다. 도구 실행 없이 다음 API 호출로 이어감
+        /// <summary> 응답/사고가 잘려서 이어서 생성해야 함. 도구 실행 없이 다음 API 호출로 이어감 </summary>
         public sealed record Continue(AssistantSpan CompletedSpan) : Result;
-
-        // 도구 실행이 필요. 실행 후 다음 API 호출을 계속
+    
+        /// <summary> 도구 실행이 필요. 실행 후 다음 API 호출을 계속 </summary>
         public sealed record ExecuteTools(AssistantSpan CompletedSpan, IReadOnlyList<Block.ToolUse> ToolCalls) : Result;
-        
-        // 대화가 완료
+    
+        /// <summary> 대화가 완료 </summary>
         public sealed record EndSpan(AssistantSpan CompletedSpan) : Result;
     }
-    
-    // 현재 진행 중인 블록의 종류와 상태
+
+    /// <summary> 현재 진행 중인 컨텐츠 블록의 종류와 상태 </summary>
     private abstract record ActiveBlock
     {
         // 텍스트 응답 블록
@@ -35,42 +35,45 @@ public sealed class ApiStreamSpan
 
         // 사고 과정(Extended Thinking) 블록
         public sealed record Thinking : ActiveBlock;
-        
+
         // 도구 호출 블록
         public sealed record ToolUse(string Id, string Name) : ActiveBlock;
     }
     
     // ── 스트리밍 중 상태 ──
-
-    // 현재 처리 중인 블록. null이면 블록 사이 유휴 상태
+    
+    /// <summary> 현재 처리 중인 블록. null이면 블록 사이 유휴 상태 </summary>
     private ActiveBlock CurrentBlock;
     
-    // 텍스트 델타를 누적하는 버퍼
+    /// <summary> 텍스트 델타를 누적하는 버퍼 </summary>
     private readonly StringBuilder TextBuffer = new();
 
-    // 사고 과정 델타를 누적하는 버퍼
+    /// <summary> 사고 과정 델타를 누적하는 버퍼 </summary>
     private readonly StringBuilder ThinkingBuffer = new();
-    
-    // 도구 입력 JSON 델타를 누적하는 버퍼
+
+    /// <summary> 도구 입력 JSON 델타를 누적하는 버퍼 </summary>
     private readonly StringBuilder ToolJsonBuffer = new();
     
-    // 사고 블록의 서명. 사고 델타 이후 별도 델타로 도착
+    /// <summary> 사고 블록의 서명. 사고 델타 이후 별도 델타로 도착 </summary>
     private string ThinkingSignature;
     
     // ── 턴 완료 후 결과 ──
-
-    // 메시지 레벨 종료 사유 (EndSpan, ToolUse, PauseTurn 등)
+    
+    /// <summary> 메시지 레벨 종료 사유 (EndSpan, ToolUse, PauseTurn 등) </summary>
     public StopReason FinalStopReason;
     
-    // 완성된 어시스턴트 콘텐츠 블록 목록 (텍스트, 사고, 도구 호출)
-    public IReadOnlyList<Block> Blocks => AssistantBlocks;
+    /// <summary> 완성된 어시스턴트 콘텐츠 블록 목록 (텍스트, 사고, 도구 호출) </summary>
     private readonly List<Block> AssistantBlocks = [];
+    public IReadOnlyList<Block> Blocks => AssistantBlocks;
+    
+    /// <summary> 이 턴에서 API에 보낸 입력 토큰 수. 컨텍스트 윈도우 사용량을 나타냄 </summary>
+    private long InputTokens;
     
     // ── 일반 함수들 ──
     
     /// <summary>
     /// 스트리밍 이벤트 하나를 처리
-    /// 클라이언트에 전달할 ChatEvent가 있으면 반환하고, 없으면 null을 반환
+    /// Claude에서 Agent로 전달할 ChatEvent가 있으면 반환하고, 없으면 null을 반환
     /// </summary>
     public ChatEvent Process(RawMessageStreamEvent Event)
     {
@@ -96,19 +99,21 @@ public sealed class ApiStreamSpan
 
         return null;
     }
-
+    
     /// <summary>
     /// 메시지 시작 이벤트를 처리
     /// 캐시 포함 전체 입력 토큰 수를 캡처
     /// </summary>
     private ChatEvent ProcessMessageStart(RawMessageStartEvent StartMsgEvt)
     {
+        Usage Usg = StartMsgEvt.Message.Usage;
+        InputTokens = Usg.InputTokens + (Usg.CacheReadInputTokens ?? 0) + (Usg.CacheCreationInputTokens ?? 0);
         return null;
     }
-    
+
     /// <summary>
-    /// 메시지 델타 이벤트를 처리합니다.
-    /// 종료 사유를 캡처합니다.
+    /// 메시지 델타 이벤트를 처리
+    /// 종료 사유를 캡처
     /// </summary>
     private ChatEvent ProcessMessageDelta(RawMessageDeltaEvent MsgDelta)
     {
@@ -117,8 +122,8 @@ public sealed class ApiStreamSpan
 
         return null;
     }
-
-    /// <summary>
+    
+     /// <summary>
     /// 블록 시작 이벤트를 처리
     /// 블록 종류를 식별하여 CurrentBlock 상태를 설정
     /// </summary>
@@ -126,13 +131,13 @@ public sealed class ApiStreamSpan
     {
         if (StartEvt.ContentBlock.TryPickText(out _))
             CurrentBlock = new ActiveBlock.Text();
-        
+
         else if (StartEvt.ContentBlock.TryPickThinking(out _))
             CurrentBlock = new ActiveBlock.Thinking();
-        
+
         else if (StartEvt.ContentBlock.TryPickToolUse(out ToolUseBlock ToolUse))
             CurrentBlock = new ActiveBlock.ToolUse(ToolUse.ID, ToolUse.Name);
-        
+
         return null;
     }
 
@@ -147,20 +152,19 @@ public sealed class ApiStreamSpan
             case ActiveBlock.Text when DeltaEvt.Delta.TryPickText(out TextDelta TextDelta):
                 TextBuffer.Append(TextDelta.Text);
                 return new ChatEvent.Assistant(TextDelta.Text);
-            
+
             case ActiveBlock.Thinking when DeltaEvt.Delta.TryPickThinking(out ThinkingDelta ThinkingDelta):
                 ThinkingBuffer.Append(ThinkingDelta.Thinking);
                 return new ChatEvent.Thinking(ThinkingDelta.Thinking);
-            
-            // Signature 델타는 Thinking 블록 내에서 사고 델타 이후에 도착
+
             case ActiveBlock.Thinking when DeltaEvt.Delta.TryPickSignature(out SignatureDelta SigDelta):
                 ThinkingSignature = SigDelta.Signature;
                 return null;
-            
+
             case ActiveBlock.ToolUse when DeltaEvt.Delta.TryPickInputJson(out InputJsonDelta JsonDelta):
                 ToolJsonBuffer.Append(JsonDelta.PartialJson);
                 return null;
-            
+
             default:
                 return null;
         }
@@ -201,38 +205,40 @@ public sealed class ApiStreamSpan
                 string InputJson = ToolJsonBuffer.ToString();
                 AssistantBlocks.Add(new Block.ToolUse(Id, Name, InputJson));
                 ToolJsonBuffer.Clear();
-                
+
                 break;
             }
         }
-        
+
         CurrentBlock = null;
         return null;
     }
-
+    
     /// <summary>
     /// 스트리밍을 완료하고 AssistantSpan을 생성
     /// 반환값으로 다음 행동(도구 실행, 이어서 호출, 종료)을 결정
     /// </summary>
     public Result Complete()
     {
-        AssistantSpan CompleteSpan = new() 
+        AssistantSpan CompleteSpan = new()
         {
             AssistantBlocks = AssistantBlocks.ToList(),
+            InputTokens = InputTokens,
         };
-        
+
         // 도구 실행 요청이 있는지 체크
         List<Block.ToolUse> ToolCalls = AssistantBlocks.OfType<Block.ToolUse>().ToList();
-        
+
         // 도구 사용 
         if (ToolCalls.Count > 0 && FinalStopReason is StopReason.ToolUse)
             return new Result.ExecuteTools(CompleteSpan, ToolCalls);
-        
+
         // 서버에 문제가 있었으므로 다시 실행
         if (FinalStopReason is StopReason.PauseTurn)
             return new Result.Continue(CompleteSpan);
-        
+
         // 정상 종료
         return new Result.EndSpan(CompleteSpan);
     }
+    
 }

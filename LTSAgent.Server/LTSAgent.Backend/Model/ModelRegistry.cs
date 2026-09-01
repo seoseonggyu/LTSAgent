@@ -3,18 +3,16 @@ using LTSAgent.Backend.Model.Attributes;
 
 namespace LTSAgent.Backend.Model;
 
-/// <summary>
-/// 어셈블리에서 [AgentModel] 어트리뷰트가 붙은 클래스를 스캔하여 모델 목록을 관리
-/// </summary>
+/// <summary> 어셈블리에서 [AgentModel] 어트리뷰트가 붙은 클래스를 스캔하여 모델 목록을 관리 </summary>
 public sealed class ModelRegistry
 {
-    // 전체 모델 배열
+    /// <summary> 전체 모델 배열 </summary>
     private readonly List<IModel> Models = [];
     
-    // 현재(비레거시) 모델 목록
+    /// <summary> 현재(비레거시) 모델 목록 </summary>
     public IReadOnlyList<IModel> CurrentModels => Models;
     
-    // ID로 모델을 찾음
+    /// <summary> ID로 모델을 찾음 </summary>
     public IModel FindById(string Id) => Models.FirstOrDefault(M => M.Id == Id);
     
     /// <summary>

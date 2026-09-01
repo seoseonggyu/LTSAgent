@@ -1,27 +1,34 @@
 ﻿using LTSAgent.Backend.Agent;
 using LTSAgent.Backend.Agent.Middleware;
 using LTSAgent.Backend.Auth;
+using LTSAgent.Backend.Mcp;
 using LTSAgent.Backend.Command;
 using LTSAgent.Backend.Command.Commands;
-using LTSAgent.Backend.Mcp;
 using LTSAgent.Backend.Model;
 using LTSAgent.Backend.Model.Models;
 using LTSAgent.Backend.Prompt;
+using LTSAgent.Backend.Skill;
+using LTSAgent.Backend.Token;
 using LTSAgent.Backend.Tool;
 using LTSAgent.Backend.Tool.Tools;
 using LTSAgent.Frontend.Infrastructure;
+
+int Port = 55558;
 
 // ── WebApplicationBuilder (서비스 등록 + 앱 설정을 담는 빌더) 생성 ──
 WebApplicationBuilder Builder = WebApplication.CreateBuilder(args);
 
 // ── Kestrel (요청을 받아서 넘겨주는 서버 엔진) 포트 설정 ──
-Builder.WebHost.UseUrls("http://localhost:55558");
+Builder.WebHost.UseUrls($"http://localhost:{Port}");
 
 // ── 정적 웹 자산 강제 로드 ──
 Builder.WebHost.UseStaticWebAssets();
 
 // ── Blazor 서비스 등록 (Razor 컴포넌트 + 서버 측 인터랙티브 모드) ──
 Builder.Services.AddRazorComponents().AddInteractiveServerComponents();
+
+// ── SignalR 메시지 크기 제한 (이미지 Base64 전송을 위해 30MB로 확장) ──
+Builder.Services.AddSignalR(Options => Options.MaximumReceiveMessageSize = 30 * 1024 * 1024);
 
 // ── HTTP 클라이언트 등록 (외부 API 호출용) ──
 Builder.Services.AddHttpClient("OAuth", C => C.Timeout = TimeSpan.FromSeconds(30));
@@ -40,6 +47,7 @@ Builder.Services.AddHostedService(Sp => Sp.GetRequiredService<AgentRunner>());
 
 // ── Runtime 모듈 ──
 Builder.Services.AddSingleton<PromptBuilder>();
+Builder.Services.AddSingleton<TokenTracker>();
 
 // ── Tool 모듈 ──
 Builder.Services.AddSingleton<ToolRegistry>();
@@ -47,6 +55,9 @@ Builder.Services.AddSingleton<ToolExecutor>();
 
 // ── Command 모듈 ──
 Builder.Services.AddSingleton<CommandRegistry>();
+
+// ── Skill 모듈 ──
+Builder.Services.AddSingleton<SkillRegistry>();
 
 // ── Claude 모델 레지스트리 & 런타임 설정 ──
 Builder.Services.AddSingleton<ModelRegistry>();
@@ -60,8 +71,11 @@ WebApplication App = Builder.Build();
 
 // ── 어트리뷰트 기반 자동 스캔 ──
 App.Services.GetRequiredService<ToolRegistry>().DiscoverTools(typeof(WebSearch).Assembly);
-App.Services.GetRequiredService<ModelRegistry>().DiscoverModels(typeof(Opus46).Assembly);
+App.Services.GetRequiredService<ModelRegistry>().DiscoverModels(typeof(Opus48).Assembly);
 App.Services.GetRequiredService<CommandRegistry>().DiscoverCommands(typeof(ClearCommand).Assembly);
+
+// ── 스킬 파일시스템 스캔 ──
+App.Services.GetRequiredService<SkillRegistry>().DiscoverSkills();
 
 // ── 설정 로드 ──
 App.Services.GetRequiredService<AuthConfig>().Load();

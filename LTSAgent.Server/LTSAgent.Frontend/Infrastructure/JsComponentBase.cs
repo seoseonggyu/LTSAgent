@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 
 namespace LTSAgent.Frontend.Infrastructure;
@@ -11,10 +11,10 @@ public abstract class JsComponentBase : ComponentBase, IAsyncDisposable
 {
     [Inject] private IJSRuntime Js { get; set; } = null!;
 
-    /// <summary>로드된 JS 모듈 참조. OnModuleLoaded() 이후 사용 가능</summary>
+    /// <summary> 로드된 JS 모듈 참조. OnModuleLoaded() 이후 사용 가능 </summary>
     protected IJSObjectReference Module = null!;
     
-    /// <summary>빌드 시각 기반 캐시 무효화 버전입니다.</summary>
+    /// <summary> 빌드 시각 기반 캐시 무효화 버전 </summary>
     private static readonly long CacheBuster = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -26,10 +26,10 @@ public abstract class JsComponentBase : ComponentBase, IAsyncDisposable
         }
     }
 
-    /// <summary> JS 모듈 로드 완료 후 호출. JS 함수 호출은 이 함수를 통해 진행. </summary>
+    /// <summary> JS 모듈 로드 완료 후 호출. JS 함수 호출은 이 함수를 통해 진행 </summary>
     protected virtual Task OnModuleLoaded() => Task.CompletedTask;
 
-    /// <summary>컴포넌트 타입의 네임스페이스로부터 .razor.js 경로를 자동 생성.</summary>
+    /// <summary> 컴포넌트 타입의 네임스페이스로부터 .razor.js 경로를 자동 생성 </summary>
     private string GetModulePath()
     {
         // 예시: ChatInput 컴포넌트 기준

@@ -5,10 +5,10 @@ using LTSAgent.Backend.Core;
 
 namespace LTSAgent.Backend.Auth;
 
-public sealed class AuthConfig
+public class AuthConfig
 {
     private readonly string ConfigPath = Path.Combine(AgentPaths.UserConfigDir, "AuthConfig.json");
-
+    
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
     
     public string ApiKey {get; private set; }
@@ -16,7 +16,7 @@ public sealed class AuthConfig
     public AnthropicClient Client { get; private set; }
 
     public bool IsApiKeyConfigured() => !string.IsNullOrWhiteSpace(ApiKey);
-
+    
     public void SetApiKey(string Key)
     {
         ApiKey = Key;

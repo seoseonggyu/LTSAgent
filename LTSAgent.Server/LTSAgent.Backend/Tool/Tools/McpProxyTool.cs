@@ -10,9 +10,7 @@ namespace LTSAgent.Backend.Tool.Tools;
 /// </summary>
 public sealed class McpProxyTool(McpClient Client, string OriginalName) : IAgentTool
 {
-    /// <summary>
-    /// MCP 서버에 tools/call 요청을 보내고 결과를 반환
-    /// </summary>
+    /// <summary> MCP 서버에 tools/call 요청을 보내고 결과를 반환 </summary>
     public async Task<ToolResult> ExecuteAsync(string InputJson, AgentSession Session, CancellationToken Ct = default)
     {
         // JSON 문자열 → JsonElement로 변환

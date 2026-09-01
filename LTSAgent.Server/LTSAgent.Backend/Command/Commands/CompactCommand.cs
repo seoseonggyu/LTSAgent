@@ -9,13 +9,11 @@ using LTSAgent.Backend.Model.Models;
 
 namespace LTSAgent.Backend.Command.Commands;
 
-/// <summary>
-/// 대화 히스토리를 Claude API로 요약하여 컨텍스트 윈도우를 확보하는 슬래시 커맨드
-/// </summary>
+/// <summary> 대화 히스토리를 Claude API로 요약하여 컨텍스트 윈도우를 확보하는 슬래시 커맨드 </summary>
 [AgentCommand("/compact", "컨텍스트를 요약하여 압축합니다. 지시사항을 추가할 수 있습니다", icon: "compress")]
 public partial class CompactCommand(AuthConfig Auth) : IAgentCommand
 {
-    /// <summary>요약 결과에서 summary 태그 내용을 추출하는 정규식</summary>
+    /// <summary> 요약 결과에서 summary 태그 내용을 추출하는 정규식 </summary>
     [GeneratedRegex(@"<summary>(.*?)</summary>", RegexOptions.Singleline)]
     private static partial Regex SummaryTagRegex();
 
@@ -37,9 +35,7 @@ public partial class CompactCommand(AuthConfig Auth) : IAgentCommand
         yield return new ChatEvent.Command("clear", "");
     }
 
-    /// <summary>
-    /// 대화 히스토리를 원본 메시지 구조 그대로 Claude API에 보내 요약
-    /// </summary>
+    /// <summary> 대화 히스토리를 원본 메시지 구조 그대로 Claude API에 보내 요약 </summary>
     private async Task<string> SummarizeAsync(Conversation.Conversation Conversation, string CustomInstruction)
     {
         if (Auth.Client is null)
@@ -57,10 +53,10 @@ public partial class CompactCommand(AuthConfig Auth) : IAgentCommand
             Content = SummaryPrompt + Suffix
         });
 
-        // Opus 4.6모델에게 요약 요청
+        // Opus 4.8모델에게 요약 요청
         Message Response = await Auth.Client.Messages.Create(new MessageCreateParams
         {
-            Model = Opus46.ModelId,
+            Model = Opus48.ModelId,
             MaxTokens = 40000,
             System = new List<TextBlockParam>
             {
@@ -85,7 +81,7 @@ public partial class CompactCommand(AuthConfig Auth) : IAgentCommand
         return Match.Success ? Match.Groups[1].Value.Trim() : ResponseText.Trim();
     }
 
-    /// <summary>응답 ContentBlock 목록에서 텍스트를 추출</summary>
+    /// <summary> 응답 ContentBlock 목록에서 텍스트를 추출 </summary>
     private static string ExtractText(IReadOnlyList<ContentBlock> Content)
     {
         StringBuilder Sb = new();
@@ -99,7 +95,7 @@ public partial class CompactCommand(AuthConfig Auth) : IAgentCommand
         return Sb.ToString();
     }
 
-    /// <summary>요약 요청 프롬프트입니다.</summary>
+    /// <summary> 요약 요청 프롬프트 </summary>
     private const string SummaryPrompt = """
                                          You have been working on a task in a Revit project but have not yet completed it.
                                          Write a continuation summary that will allow you (or another instance of yourself)

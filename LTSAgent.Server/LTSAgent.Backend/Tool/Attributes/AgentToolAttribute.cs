@@ -7,9 +7,9 @@
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
 public sealed class AgentToolAttribute(string name, string description) : Attribute
 {
-    // Claude API에 전달할 도구 이름
+    /// <summary> Claude API에 전달할 도구 이름 </summary>
     public string Name { get; } = name;
 
-    // Claude에게 보여줄 도구 설명
+    /// <summary> Claude에게 보여줄 도구 설명 </summary>
     public string Description { get; } = description;
 }

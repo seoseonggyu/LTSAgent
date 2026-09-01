@@ -8,7 +8,39 @@ export function setupKeyBindings(textarea, dotNetRef)
 {
     textarea.addEventListener("keydown", function (e)
     {
-        // 팝업이 열려있을 때 키 처리
+        // 멘션 팝업이 열려있을 때
+        if (document.querySelector(".mention-popup"))
+        {
+            switch (e.key)
+            {
+                case "ArrowUp":
+                    e.preventDefault();
+                    dotNetRef.invokeMethodAsync("MentionNavigate", -1);
+                    return;
+                case "ArrowDown":
+                    e.preventDefault();
+                    dotNetRef.invokeMethodAsync("MentionNavigate", 1);
+                    return;
+                case "Enter":
+                    e.preventDefault();
+                    dotNetRef.invokeMethodAsync("MentionSelect");
+                    return;
+                case "Tab":
+                    e.preventDefault();
+                    dotNetRef.invokeMethodAsync("MentionTab");
+                    return;
+                case "ArrowLeft":
+                    e.preventDefault();
+                    dotNetRef.invokeMethodAsync("MentionGoBack");
+                    return;
+                case "Escape":
+                    e.preventDefault();
+                    dotNetRef.invokeMethodAsync("MentionClose");
+                    return;
+            }
+        }
+
+        // 커맨드 팝업이 열려있을 때
         if (document.querySelector(".command-popup"))
         {
             switch (e.key)

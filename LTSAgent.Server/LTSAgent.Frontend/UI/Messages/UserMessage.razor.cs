@@ -5,6 +5,6 @@ namespace LTSAgent.Frontend.UI.Messages;
 
 public partial class UserMessage
 {
-    /// <summary>표시할 유저 메시지입니다.</summary>
+    /// <summary> 표시할 유저 메시지 </summary>
     [Parameter] public ChatUIMessage.User Message { get; set; } = null!;
 }

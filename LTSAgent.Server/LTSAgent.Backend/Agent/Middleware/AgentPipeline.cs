@@ -12,14 +12,14 @@ public sealed class AgentPipeline
     private readonly List<IAgentMiddleware> Middlewares = [];
     private AgentDelegate Pipeline;
     
-    /// <summary>미들웨어를 파이프라인에 추가</summary>
+    /// <summary> 미들웨어를 파이프라인에 추가 </summary>
     public AgentPipeline Use(IAgentMiddleware Middleware)
     {
         Middlewares.Add(Middleware);
         return this;
     }
     
-    /// <summary>파이프라인의 최종 단계(에이전트 루프)를 설정하고 빌드</summary>
+    /// <summary> 파이프라인의 최종 단계(에이전트 루프)를 설정하고 빌드 </summary>
     public AgentPipeline Run(AgentDelegate Terminal)
     {
         AgentDelegate Current = Terminal;
@@ -35,8 +35,7 @@ public sealed class AgentPipeline
         return this;
     }
     
-    /// <summary>파이프라인을 실행</summary>
+    /// <summary> 파이프라인을 실행 </summary>
     public IAsyncEnumerable<ChatEvent> RunAsync(UserInput Input, AgentSession Session, CancellationToken Ct)
-        => (Pipeline ?? throw new InvalidOperationException("Run()으로 파이프라인을 빌드해야 합니다."))
-            (Input, Session, Ct);
+        => (Pipeline ?? throw new InvalidOperationException("Run()으로 파이프라인을 빌드해야 합니다."))(Input, Session, Ct);
 }

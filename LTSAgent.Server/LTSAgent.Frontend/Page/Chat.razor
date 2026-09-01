@@ -1,4 +1,4 @@
-﻿@page "/"
+@page "/"
 
 <Header OnSettingsClick="ToggleSettings"/>
 <SettingsPanel bIsVisible="bShowSettings" OnClose="ToggleSettings" />
@@ -10,5 +10,5 @@
         <PermissionDialog Request="PermReq" OnDecision="HandlePermissionDecision" />
     }
     
-    <ChatInput OnSend="AgentRunner.EnqueueMessage"/>
+    <ChatInput OnSend="AgentRunner.EnqueueMessage" ContextTokens="AgentSession.Conversation.ContextTokens"/>
 </div>

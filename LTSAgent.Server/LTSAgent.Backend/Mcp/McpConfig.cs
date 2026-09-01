@@ -4,10 +4,7 @@ using LTSAgent.Backend.Core;
 
 namespace LTSAgent.Backend.Mcp;
 
-
-/// <summary>
-/// settings.local.json에서 mcpServers 섹션을 로드
-/// </summary>
+/// <summary> settings.local.json에서 mcpServers 섹션을 로드 </summary>
 public static class McpConfig
 {
     /// <summary>
@@ -16,8 +13,10 @@ public static class McpConfig
     /// </summary>
     public static Dictionary<string, McpServerConfig> Load()
     {
-        // TODO: C:\Users\{userName} 가 아니라 각 프로젝트에 맞게 설정 필요
-        string SettingsPath = Path.Combine(AgentPaths.UserConfigDir, "settings.global.json");
+        string SettingsPath = Path.Combine(AgentPaths.ConfigDir, "settings.local.json"); // TODO: MCP 서버 설정해야함
+
+        if (!File.Exists(SettingsPath))
+            return new();
         
         string Json = File.ReadAllText(SettingsPath);
         using JsonDocument Doc = JsonDocument.Parse(Json);
@@ -30,9 +29,7 @@ public static class McpConfig
 }
 
 
-/// <summary>
-/// MCP 서버 하나의 설정
-/// </summary>
+/// <summary> MCP 서버 하나의 설정 </summary>
 public sealed record McpServerConfig
 (
     [property: JsonPropertyName("url")]

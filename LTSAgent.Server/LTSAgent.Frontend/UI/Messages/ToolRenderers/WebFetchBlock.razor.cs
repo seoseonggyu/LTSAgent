@@ -10,24 +10,24 @@ namespace LTSAgent.Frontend.UI.Messages.ToolRenderers;
 /// </summary>
 public partial class WebFetchBlock : ComponentBase
 {
-    // 표시할 Tool 메시지
+    /// <summary> 표시할 Tool 메시지 </summary>
     [Parameter] public ChatUIMessage.Tool Message { get; set; } = default!;
 
-    // 이 도구의 summary 바 메타데이터
+    /// <summary> 이 도구의 summary 바 메타데이터 </summary>
     public static ToolMeta GetInfo(ChatUIMessage.Tool Msg)
-    => new("language", "Web Fetch", "font-mono", GetDomain(Msg));
-    
-    // 권한 다이얼로그에 표시할 요약
-    public static string GetPermissionSummary(string InputJson)
-    => ChatUIMessage.Tool.GetInputField(InputJson, "url");
+        => new("language", "Web Fetch", "font-mono", GetDomain(Msg));
 
-    // 입력 JSON에서 원본 URL을 가져옴
+    /// <summary> 권한 다이얼로그에 표시할 요약 </summary>
+    public static string GetPermissionSummary(string InputJson)
+        => ChatUIMessage.Tool.GetInputField(InputJson, "url");
+
+    /// <summary> 입력 JSON에서 원본 URL을 가져옴 </summary>
     private string FetchUrl => ChatUIMessage.Tool.GetInputField(Message.Input, "url");
 
-    // URL의 도메인을 추출
+    /// <summary> URL의 도메인을 추출 </summary>
     private string Domain => GetDomain(Message);
 
-    // 입력 JSON에서 URL의 도메인을 추출
+    /// <summary> 입력 JSON에서 URL의 도메인을 추출 </summary>
     private static string GetDomain(ChatUIMessage.Tool Msg)
     {
         string Url = ChatUIMessage.Tool.GetInputField(Msg.Input, "url");

@@ -12,12 +12,10 @@ namespace LTSAgent.Backend.Command;
 /// </summary>
 public sealed class CommandRegistry(IServiceProvider ServiceProvider)
 {
-    /// <summary>
-    /// 등록된 커맨드 정보
-    /// </summary>
+    /// <summary> 등록된 커맨드 정보 </summary>
     public sealed record CommandEntry(string Name, string Description, string Icon, IAgentCommand Command);
 
-    /// <summary>커맨드 이름 → CommandEntry 매핑. 대소문자를 구분하지 않는다.</summary>
+    /// <summary> 커맨드 이름 → CommandEntry 매핑. 대소문자를 구분하지 않는다 </summary>
     private readonly Dictionary<string, CommandEntry> Commands = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
@@ -46,14 +44,10 @@ public sealed class CommandRegistry(IServiceProvider ServiceProvider)
         }
     }
 
-    /// <summary>
-    /// 등록된 모든 커맨드 정보를 반환
-    /// </summary>
+    /// <summary> 등록된 모든 커맨드 정보를 반환 </summary>
     public IReadOnlyList<CommandEntry> GetAll() => Commands.Values.ToList();
 
-    /// <summary>
-    /// 슬래시 입력이 등록된 커맨드인지 확인. "/clear arg1" → "/clear"로 매칭
-    /// </summary>
+    /// <summary> 슬래시 입력이 등록된 커맨드인지 확인. "/clear arg1" → "/clear"로 매칭 </summary>
     public bool HasCommand(string Input)
     {
         string Name = Input.Split(' ', StringSplitOptions.RemoveEmptyEntries)[0];

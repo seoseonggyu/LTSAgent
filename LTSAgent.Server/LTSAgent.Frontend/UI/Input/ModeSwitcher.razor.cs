@@ -6,19 +6,19 @@ namespace LTSAgent.Frontend.UI.Input;
 
 public partial class ModeSwitcher : ComponentBase
 {
-    /// <summary>현재 대화 세션입니다.</summary>
+    /// <summary> 현재 대화 세션 </summary>
     [Inject] private AgentSession Session { get; set; } = null!;
     
-    /// <summary>현재 모드입니다.</summary>
+    /// <summary> 현재 모드 </summary>
     private AgentMode CurrentMode => Session.Mode;
     
-    /// <summary>모드를 직접 설정합니다.</summary>
+    /// <summary> 모드를 직접 설정 </summary>
     private void SetMode(AgentMode Mode)
     {
         Session.Mode = Mode;
     }
     
-    /// <summary>모드를 순환 전환합니다: Normal → Edit → Plan → Normal</summary>
+    /// <summary> 모드를 순환 전환 : Normal → Edit → Plan → Normal </summary>
     public void CycleMode()
     {
         Session.Mode = Session.Mode switch
@@ -31,7 +31,7 @@ public partial class ModeSwitcher : ComponentBase
         StateHasChanged();
     }
     
-    /// <summary>모드별 도트 색상 클래스를 반환합니다.</summary>
+    /// <summary> 모드별 도트 색상 클래스를 반환 </summary>
     private static string DotColor(AgentMode Mode, bool bIsActive) => Mode switch
     {
         AgentMode.Normal => bIsActive ? "bg-[#94a3b8]" : "bg-[#94a3b8]/50",
@@ -40,7 +40,7 @@ public partial class ModeSwitcher : ComponentBase
         _                => "bg-[#94a3b8]/50"
     };
 
-    /// <summary>모드별 텍스트 색상 클래스를 반환합니다.</summary>
+    /// <summary> 모드별 텍스트 색상 클래스를 반환 </summary>
     private static string TextColor(AgentMode Mode, bool bIsActive) => Mode switch
     {
         AgentMode.Normal => bIsActive ? "text-[#cbd5e1]" : "text-[#94a3b8]",

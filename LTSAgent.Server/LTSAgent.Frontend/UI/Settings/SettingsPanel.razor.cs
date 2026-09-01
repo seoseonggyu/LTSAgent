@@ -5,25 +5,25 @@ namespace LTSAgent.Frontend.UI.Settings;
 
 public partial class SettingsPanel
 {
-    /// <summary>인증 설정입니다.</summary>
+    /// <summary> 인증 설정 </summary>
     [Inject] private AuthConfig Auth { get; set; } = null!;
 
-    /// <summary>패널 표시 여부입니다.</summary>
+    /// <summary> 패널 표시 여부 </summary>
     [Parameter] public bool bIsVisible { get; set; }
 
-    /// <summary>패널 닫기 콜백입니다.</summary>
+    /// <summary> 패널 닫기 콜백 </summary>
     [Parameter] public EventCallback OnClose { get; set; }
 
-    /// <summary>API Key 입력값입니다.</summary>
+    /// <summary> API Key 입력값 </summary>
     private string ApiKeyInput = "";
 
-    /// <summary>상태 메시지입니다.</summary>
+    /// <summary> 상태 메시지 </summary>
     private string StatusMessage = "";
 
-    /// <summary>상태 메시지 CSS 클래스입니다.</summary>
+    /// <summary> 상태 메시지 CSS 클래스 </summary>
     private string StatusCss = "";
 
-    /// <summary>API Key를 저장합니다.</summary>
+    /// <summary> API Key를 저장 </summary>
     private void SaveApiKey()
     {
         if (string.IsNullOrWhiteSpace(ApiKeyInput))

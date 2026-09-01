@@ -2,27 +2,25 @@
 
 namespace LTSAgent.Backend.Chat;
 
-/// <summary>
-/// UI에 표시되는 채팅 메시지
-/// </summary>
+/// <summary> UI에 표시되는 채팅 메시지 </summary>
 public abstract record ChatUIMessage
 {
-    // 메시지 본문
+    /// <summary> 메시지 본문 </summary>
     public abstract string Content { get; init; }
     
-    // 메시지 생성 시간
+    /// <summary> 메시지 생성 시간 </summary>
     public DateTime Timestamp { get; init; } = DateTime.Now;
     
-    // Content 뒤에 텍스트를 이어붙인 새 인스턴스를 반환
+    /// <summary> Content 뒤에 텍스트를 이어붙인 새 인스턴스를 반환 </summary>
     public ChatUIMessage Append(string Text) => this with { Content = Content + Text };
     
-    // 사용자 메시지
-    public sealed record User(string Content) : ChatUIMessage;
+    /// <summary> 사용자 메시지 </summary>
+    public sealed record User(string Content, string ImageMediaType = null, string ImageBase64 = null) : ChatUIMessage;
     
-    // 어시스턴트(AI) 응답
+    /// <summary> 어시스턴트(AI) 응답 </summary>
     public sealed record Assistant(string Content) : ChatUIMessage;
     
-    // 사고 과정(Extended Thinking) 메시지
+    /// <summary> 사고 과정(Extended Thinking) 메시지 </summary>
     public sealed record Thinking(string Content) : ChatUIMessage
     {
         // 사고 시작 시간. UI에서 실시간 경과 시간을 계산
@@ -35,7 +33,7 @@ public abstract record ChatUIMessage
         public bool bIsCompleted { get; init; }
     }
     
-    // 도구 실행 메시지
+    /// <summary> 도구 실행 메시지 </summary>
     public sealed record Tool(string Name, string Content) : ChatUIMessage
     {
         // Claude가 발급한 tool_use ID
@@ -73,6 +71,6 @@ public abstract record ChatUIMessage
         }
     }
     
-    // 시스템 메시지
+    /// <summary> 시스템 메시지 </summary>
     public sealed record System(string Content) : ChatUIMessage;
 }

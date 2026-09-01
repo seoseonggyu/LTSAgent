@@ -5,6 +5,7 @@ using LTSAgent.Backend.Core;
 using LTSAgent.Backend.Mode;
 using LTSAgent.Backend.Model;
 using LTSAgent.Backend.Model.Models;
+using LTSAgent.Backend.Skill;
 using LTSAgent.Backend.Tool;
 
 namespace LTSAgent.Backend.Prompt;
@@ -13,9 +14,9 @@ namespace LTSAgent.Backend.Prompt;
 /// Claude API 시스템 프롬프트 구성과 MessageCreateParams 생성을 담당
 /// 시스템 프롬프트는 최초 호출 시 생성되고 이후 캐싱
 /// </summary>
-public sealed class PromptBuilder(ToolRegistry ToolRegistry, ModelSettings ModelSettings)
+public sealed class PromptBuilder(ToolRegistry ToolRegistry, ModelSettings ModelSettings, SkillRegistry SkillRegistry)
 {
-    /// <summary>빌더 체인의 각 섹션. 토큰 측정 시 특정 섹션을 제외할 수 있음</summary>
+    /// <summary> 빌더 체인의 각 섹션. 토큰 측정 시 특정 섹션을 제외할 수 있음 </summary>
     [Flags]
     public enum Section
     {
@@ -27,14 +28,16 @@ public sealed class PromptBuilder(ToolRegistry ToolRegistry, ModelSettings Model
         ToneAndStyle = 1 << 4,
         OutputEfficiency = 1 << 5,
         ModeOverride = 1 << 6,
-        RevitAgentMd  = 1 << 7
+        RevitAgentMd = 1 << 7,
+        Skills = 1 << 8,
+
+        All = Identity | System | DoingTasks | Proactiveness | ToneAndStyle | OutputEfficiency | ModeOverride |
+              RevitAgentMd | Skills,
     }
 
     // ── API 파라미터 생성 ──
 
-    /// <summary>
-    /// Claude API 호출 파라미터를 생성
-    /// </summary>
+    /// <summary> Claude API 호출 파라미터를 생성 </summary>
     public MessageCreateParams Build(AgentSession Session) => new()
     {
         Model = ModelSettings.Model,
@@ -49,15 +52,20 @@ public sealed class PromptBuilder(ToolRegistry ToolRegistry, ModelSettings Model
 
     // ── 시스템 프롬프트 구성 ──
 
-    /// <summary>
-    /// 시스템 프롬프트를 반환. 모드에 따라 동적으로 생성
-    /// </summary>
+    /// <summary> 시스템 프롬프트를 반환. 모드에 따라 동적으로 생성 </summary>
     public string BuildSystemPrompt(AgentSession Session = null)
     {
         return BuildInternal(Section.None, Session);
     }
 
-    /// <summary>각 섹션 메서드를 호출하고 결과를 결합하여 프롬프트 문자열을 생성</summary>
+    /// <summary> 지정한 섹션을 제외한 시스템 프롬프트를 생성 </summary>
+    public string BuildWithout(Section Skip, AgentSession Session = null) => BuildInternal(Skip, Session);
+
+    /// <summary> 지정한 섹션만 포함한 시스템 프롬프트를 생성 </summary>
+    public string BuildOnly(Section Include, AgentSession Session = null) =>
+        BuildInternal(Section.All & ~Include, Session);
+
+    /// <summary> 각 섹션 메서드를 호출하고 결과를 결합하여 프롬프트 문자열을 생성 </summary>
     private string BuildInternal(Section Skip, AgentSession Session)
     {
         AgentMode Mode = Session?.Mode ?? AgentMode.Normal;
@@ -69,7 +77,7 @@ public sealed class PromptBuilder(ToolRegistry ToolRegistry, ModelSettings Model
 
         if (!Skip.HasFlag(Section.System))
             Sb.AppendLine(System());
-        
+
         if (!Skip.HasFlag(Section.RevitAgentMd))
         {
             string Md = RevitAgentMd();
@@ -97,31 +105,33 @@ public sealed class PromptBuilder(ToolRegistry ToolRegistry, ModelSettings Model
         if (!Skip.HasFlag(Section.OutputEfficiency))
             Sb.AppendLine(OutputEfficiency());
 
+        if (!Skip.HasFlag(Section.Skills))
+        {
+            string Skills = SkillListing();
+
+            if (Skills is not null)
+                Sb.AppendLine(Skills);
+        }
+
         return Sb.ToString();
     }
 
     // ── 시스템 프롬프트 ──
-    /// <summary>
-    /// AI 어시스턴트의 역할과 핵심 규칙을 정의
-    /// </summary>
+    /// <summary> AI 어시스턴트의 역할과 핵심 규칙을 정의 </summary>
     private static string Identity() => """
-                                        You are RevitAgent, an AI assistant that controls Autodesk Revit.
+                                                            You are RevitAgent, an AI assistant that controls Autodesk Revit.
 
-                                        You are an interactive agent that helps users with Revit model authoring,
-                                        family and parameter management, and editor automation tasks. Use the
-                                        instructions below and the tools available to you to assist the user.
+                                                            You are an interactive agent that helps users with Revit model authoring,
+                                                            family and parameter management, and editor automation tasks. Use the
+                                                            instructions below and the tools available to you to assist the user.
 
-                                        IMPORTANT: You must NEVER guess element IDs, family/type names, or parameter
-                                        values. Always query the current state first.
-                                        IMPORTANT: Before deleting elements or making bulk destructive changes (100+
-                                        elements, project settings, shared parameters), always confirm with the user
-                                        first.
-                                        """;
+                                                            IMPORTANT: You must NEVER guess element IDs, family/type names, or parameter
+                                                            values. Always query the current state first.
+                                                            IMPORTANT: Before deleting elements or making bulk destructive changes (100+
+                                                            elements, project settings, shared parameters), always confirm with the user first.
+                                                            """;
 
-
-    /// <summary>
-    /// 시스템 레벨 동작 규칙을 정의
-    /// </summary>
+    /// <summary> 시스템 레벨 동작 규칙을 정의 </summary>
     private static string System() => """
                                       # System
                                       - All text you output outside of tool use is displayed to the user in the
@@ -132,9 +142,7 @@ public sealed class PromptBuilder(ToolRegistry ToolRegistry, ModelSettings Model
                                         corrected version. Do not retry the same code.
                                       """;
 
-    /// <summary>
-    /// 작업 수행 시 단계별 절차를 정의
-    /// </summary>
+    /// <summary> 작업 수행 시 단계별 절차를 정의 </summary>
     private static string DoingTasks() => """
                                           # Doing tasks
                                           1. Query current state — always verify before making changes
@@ -148,9 +156,7 @@ public sealed class PromptBuilder(ToolRegistry ToolRegistry, ModelSettings Model
                                           - Avoid over-engineering. Only do what the user asked.
                                           """;
 
-    /// <summary>
-    /// 능동적 행동의 범위를 정의
-    /// </summary>
+    /// <summary> 능동적 행동의 범위를 정의 </summary>
     private static string Proactiveness() => """
                                              # Proactiveness
                                              You are allowed to be proactive, but only when the user asks you to do
@@ -162,9 +168,7 @@ public sealed class PromptBuilder(ToolRegistry ToolRegistry, ModelSettings Model
                                              Do not immediately jump into taking actions.
                                              """;
 
-    /// <summary>
-    /// 응답 톤과 스타일 규칙을 정의
-    /// </summary>
+    /// <summary> 응답 톤과 스타일 규칙을 정의 </summary>
     private static string ToneAndStyle() => """
                                             # Tone and style
                                             - Respond in the same language as the user.
@@ -177,9 +181,7 @@ public sealed class PromptBuilder(ToolRegistry ToolRegistry, ModelSettings Model
                                             - Do not use emojis unless the user explicitly requests it.
                                             """;
 
-    /// <summary>
-    /// 출력 효율 규칙을 정의. 간결하고 핵심적인 응답을 유도
-    /// </summary>
+    /// <summary> 출력 효율 규칙을 정의. 간결하고 핵심적인 응답을 유도 </summary>
     private static string OutputEfficiency() => """
                                                 # Output efficiency
                                                 IMPORTANT: Go straight to the point. Do not overdo it. Be extra concise.
@@ -196,9 +198,7 @@ public sealed class PromptBuilder(ToolRegistry ToolRegistry, ModelSettings Model
                                                 If you can say it in one sentence, do not use three.
                                                 """;
 
-    /// <summary>
-    /// 모드별 시스템 프롬프트 오버라이드를 반환. Normal 모드는 null.
-    /// </summary>
+    /// <summary> 모드별 시스템 프롬프트 오버라이드를 반환. Normal 모드는 null </summary>
     private static string ModeSection(AgentMode Mode) => Mode switch
     {
         AgentMode.Plan => """
@@ -332,12 +332,52 @@ public sealed class PromptBuilder(ToolRegistry ToolRegistry, ModelSettings Model
 
         _ => null
     };
-    
-    /// <summary>
-    /// REVITAGENT.md 프로젝트 지침을 반환. 파일이 없으면 null을 반환합니다.
-    /// </summary>
+
+    /// <summary> REVITAGENT.md 프로젝트 지침을 반환. 파일이 없으면 null을 반환 </summary>
     private static string RevitAgentMd()
     {
-        return null;
+        string FilePath = Path.Combine(AgentPaths.RootPath, "REVITAGENT.md");
+        if (!File.Exists(FilePath))
+            return null;
+
+        string Content = File.ReadAllText(FilePath).Trim();
+        if (string.IsNullOrEmpty(Content))
+            return null;
+
+        return $"""
+                <system-reminder>
+                # REVITAGENT.md
+                Project instructions are shown below. Be sure to adhere to these instructions.
+                IMPORTANT: These instructions OVERRIDE any default behavior and you MUST follow
+                them exactly as written.
+
+                {Content}
+                </system-reminder>
+                """;
+    }
+
+    /// <summary>
+    /// 스킬 목록을 시스템 프롬프트에 포함. 스킬이 없으면 null을 반환
+    /// disableModelInvocation인 스킬은 제외
+    /// </summary>
+    private string SkillListing()
+    {
+        string Listing = SkillRegistry.GetSkillListingPrompt();
+        if (Listing is null)
+            return null;
+
+        return $"""
+                <system-reminder>
+                The following skills are available for use with the skill tool:
+
+                {Listing}
+
+                /<skill-name> is shorthand for users to invoke a skill.
+                When executed, the skill gets expanded to a full prompt.
+                Use the skill tool to execute them.
+                IMPORTANT: Only use the skill tool for skills listed above — do not guess
+                or use built-in commands.
+                </system-reminder>
+                """;
     }
 }

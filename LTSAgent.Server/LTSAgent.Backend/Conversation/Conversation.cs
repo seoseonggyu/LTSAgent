@@ -4,17 +4,19 @@ using Block = LTSAgent.Backend.Core.Block;
 
 namespace LTSAgent.Backend.Conversation;
 
-
 /// <summary>
 /// Claude API 대화 히스토리를 관리
 /// MessageSpan 기반으로 사용자 턴과 API 호출 결과를 구조화하여 저장
 /// </summary>
 public sealed class Conversation
 {
-    // 메시지 구간(사용자 1턴) 목록
+    /// <summary> 메시지 구간(사용자 1턴) 목록 </summary>
     private readonly List<MessageSpan> MessageSpans = [];
     
-    // MessageSpan을 추가하고 반환
+    /// <summary> 마지막 AssistantSpan의 입력 토큰 수. 현재 컨텍스트 윈도우 사용량을 나타냄 </summary>
+    public long ContextTokens => MessageSpans.SelectMany(E => E.AssistantSpans).LastOrDefault()?.InputTokens ?? 0;
+        
+    /// <summary> MessageSpan을 추가하고 반환 </summary>
     public MessageSpan AddMessageSpan(UserInput Input)
     {
         MessageSpan MessageSpan = new() { UserInput = Input };
@@ -59,17 +61,24 @@ public sealed class Conversation
     /// </summary>
     private static MessageParam ConvertUserInput(UserInput Input)
     {
-        List<ContentBlockParam> Blocks = new List<ContentBlockParam>();
+        List<ContentBlockParam> Blocks = [];
+
+        // 이미지 블록을 먼저 추가 Claude가 이미지를 먼저 인식하도록
+        if (Input.bHasImage)
+        {
+            Blocks.Add(new ImageBlockParam
+            {
+                Source = new Base64ImageSource { MediaType = Input.ImageMediaType!, Data = Input.ImageBase64! }
+            });
+        }
         
-        if (!string.IsNullOrWhiteSpace(Input.Text))
-            Blocks.Add(new TextBlockParam { Text = Input.Text });
-        
+        // 텍스트 추가
+        Blocks.Add(new TextBlockParam { Text = Input.Text });
+
         return new MessageParam { Role = Role.User, Content = Blocks };
     }
 
-    /// <summary>
-    /// 도메인 Block 목록을 Anthropic API 어시스턴트 메시지로 변환
-    /// </summary>
+    /// <summary> 도메인 Block 목록을 Anthropic API 어시스턴트 메시지로 변환 </summary>
     private static MessageParam ConvertAssistantBlocks(IReadOnlyList<Block> Blocks)
     {
         List<ContentBlockParam> ContentBlocks = new List<ContentBlockParam>();
@@ -102,9 +111,7 @@ public sealed class Conversation
         return new MessageParam { Role = Role.Assistant, Content = ContentBlocks };
     }
 
-    /// <summary>
-    /// 도구 실행 결과를 Anthropic API user 메시지(ToolResult)로 변환
-    /// </summary>
+    /// <summary> 도구 실행 결과를 Anthropic API user 메시지(ToolResult)로 변환 </summary>
     private static MessageParam ConvertToolResults(IReadOnlyList<AssistantSpan.ToolExecution> Executions)
     {
         List<ContentBlockParam> ResultBlocks = Executions.Select(E => (ContentBlockParam)new ToolResultBlockParam
@@ -117,9 +124,7 @@ public sealed class Conversation
         return new MessageParam { Role = Role.User, Content = ResultBlocks };
     }
     
-    /// <summary>
-    /// 대화 내역을 초기화
-    /// </summary>
+    /// <summary> 대화 내역을 초기화 </summary>
     public void Clear()
     {
         MessageSpans.Clear();

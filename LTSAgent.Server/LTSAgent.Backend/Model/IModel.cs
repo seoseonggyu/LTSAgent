@@ -6,18 +6,18 @@
 /// </summary>
 public interface IModel
 {
-    // Claude API 모델 ID (예: "claude-opus-4-6")
+    /// <summary> Claude API 모델 ID (예: "claude-opus-4-8") </summary>
     string Id { get; }
 
-    // UI에 표시할 모델 이름 (예: "Claude Opus 4.6")
+    /// <summary> UI에 표시할 모델 이름 (예: "Claude Opus 4.8") </summary>
     string DisplayName { get; }
 
-    // 모델 설명
+    /// <summary> 모델 설명 </summary>
     string Description { get; }
 
-    // 최대 출력 토큰 수
+    /// <summary> 최대 출력 토큰 수 </summary>
     int MaxOutputTokens { get; }
 
-    // 컨텍스트 윈도우 크기
+    /// <summary> 컨텍스트 윈도우 크기 </summary>
     int ContextWindow { get; }
 }

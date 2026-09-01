@@ -6,24 +6,22 @@
 /// </summary>
 public sealed class ChatStore 
 {
-    // UI에 표시되는 채팅 메시지 목록
+    /// <summary> UI에 표시되는 채팅 메시지 목록 </summary>
     public List<ChatUIMessage> Messages { get; } = [];
     
-    // 현재 턴에서 응답 수신이 시작되었는지 여부
+    /// <summary> 현재 턴에서 응답 수신이 시작되었는지 여부 </summary>
     public bool bIsReceiving { get; private set; }
     
-    /// <summary>
-    /// ChatEvent를 처리하여 UI 메시지를 업데이트
-    /// </summary>
+    /// <summary> ChatEvent를 처리하여 UI 메시지를 업데이트 </summary>
     public void Process(ChatEvent Evt)
     {
         bIsReceiving = Evt is ChatEvent.User;
         
         switch (Evt)
         {
-            case ChatEvent.User { Content: var Content }:
+            case ChatEvent.User { Content: var Content, ImageMediaType: var MediaType, ImageBase64: var Base64 }:
             {
-                Messages.Add(new ChatUIMessage.User(Content));
+                Messages.Add(new ChatUIMessage.User(Content, MediaType, Base64));
                 
                 break;
             }
@@ -118,7 +116,7 @@ public sealed class ChatStore
         }
     }
 
-    // 미완료 Thinking 메시지를 완료 처리
+    /// <summary> 미완료 Thinking 메시지를 완료 처리 </summary>
     private void ThinkingComplete()
     {
         if (Messages.Count > 0 && Messages[^1] is ChatUIMessage.Thinking { bIsCompleted: false } T)
@@ -131,7 +129,7 @@ public sealed class ChatStore
         }
     }
     
-    /// tool_use ID가 일치하는 pending Tool 메시지의 인덱스와 객체를 찾음
+    /// <summary> tool_use ID가 일치하는 pending Tool 메시지의 인덱스와 객체를 찾음 </summary>
     private (int Index, ChatUIMessage.Tool Tool) FindPendingTool(string ToolUseId, string Name)
     {
         for (int I = Messages.Count - 1; I >= 0; I--)

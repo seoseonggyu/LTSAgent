@@ -28,26 +28,26 @@ namespace LTSAgent.Backend.Tool.Tools;
                          """)]
 public class WebSearch(AuthConfig Auth) : AgentTool<WebSearch.Input>
 {
-    /// <summary>web_search 도구의 입력 파라미터</summary>
+    /// <summary> web_search 도구의 입력 파라미터 </summary>
     public sealed record Input(
         [property: JsonPropertyName("query")]
         [property: Description("The search query to use")]
         string Query,
-
+        
+#nullable enable
         [property: JsonPropertyName("allowed_domains")]
         [property: Description("Only include search results from these domains")]
-        string[] AllowedDomains = null,
+        string[]? AllowedDomains = null,
 
         [property: JsonPropertyName("blocked_domains")]
         [property: Description("Never include search results from these domains")]
-        string[] BlockedDomains = null);
+        string[]? BlockedDomains = null);
+#nullable disable
     
-    /// <summary>서브 API 호출당 최대 검색 횟수</summary>
+    /// <summary> 서브 API 호출당 최대 검색 횟수 </summary>
     private const int MaxUses = 30;
 
-    /// <summary>
-    /// 서브 API 호출로 웹 검색을 실행하고 결과를 반환.
-    /// </summary>
+    /// <summary> 서브 API 호출로 웹 검색을 실행하고 결과를 반환 </summary>
     protected override async Task<ToolResult> ExecuteAsync(Input Args, AgentSession Session, CancellationToken Ct)
     {
         if (Auth.Client is null)
@@ -89,9 +89,7 @@ public class WebSearch(AuthConfig Auth) : AgentTool<WebSearch.Input>
         return ToolResult.Success(ExtractSearchResults(Response));
     }
 
-    /// <summary>
-    /// API 응답에서 검색 결과를 추출하여 JSON 배열로 반환
-    /// </summary>
+    /// <summary> API 응답에서 검색 결과를 추출하여 JSON 배열로 반환 </summary>
     private static string ExtractSearchResults(Message Response)
     {
         List<SearchResultEntry> Entries = [];
@@ -115,7 +113,7 @@ public class WebSearch(AuthConfig Auth) : AgentTool<WebSearch.Input>
         return Entries.Count == 0 ? "No search results found." : JsonSerializer.Serialize(Entries);
     }
     
-    /// <summary>검색 결과 항목</summary>
+    /// <summary> 검색 결과 항목 </summary>
     private sealed record SearchResultEntry(
         [property: JsonPropertyName("title")] string Title,
         [property: JsonPropertyName("url")] string Url,

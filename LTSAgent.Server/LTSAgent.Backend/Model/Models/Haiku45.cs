@@ -2,10 +2,8 @@
 
 namespace LTSAgent.Backend.Model.Models;
 
-/// <summary>
-/// Claude Haiku 4.5 모델 정의입니다.
-/// </summary>
-[AgentModel(Order = 2)]
+/// <summary> Claude Haiku 4.5 모델 정의 </summary>
+[AgentModel(Order = 3)]
 public sealed class Haiku45 : IModel
 {
     public const string ModelId = "claude-haiku-4-5-20251001";

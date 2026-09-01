@@ -3,14 +3,8 @@ using LTSAgent.Backend.Conversation;
 
 namespace LTSAgent.Backend.Agent.Middleware;
 
-/// <summary>
-/// 에이전트 파이프라인의 다음 단계를 실행하는 델리게이트
-/// </summary>
+/// <summary> 에이전트 파이프라인의 다음 단계를 실행하는 델리게이트 </summary>
 public delegate IAsyncEnumerable<ChatEvent> AgentDelegate(UserInput Input, AgentSession Session, CancellationToken Ct);
-
-//-----------------------------------------------------------------------------
-// AgentMiddleware
-//-----------------------------------------------------------------------------
 
 /// <summary>
 /// 에이전트 파이프라인 미들웨어 기본 클래스
@@ -18,12 +12,12 @@ public delegate IAsyncEnumerable<ChatEvent> AgentDelegate(UserInput Input, Agent
 /// </summary>
 public abstract class IAgentMiddleware
 {
-    /// <summary>파이프라인의 다음 단계 </summary>
+    /// <summary> 파이프라인의 다음 단계 </summary>
     protected AgentDelegate Next { get; private set; } = null!;
-    
-    /// <summary>다음 단계를 설정. AgentPipeline이 빌드 시 호출 </summary>
+
+    /// <summary> 다음 단계를 설정. AgentPipeline이 빌드 시 호출 </summary>
     internal void SetNext(AgentDelegate Delegate) => Next = Delegate;
-    
-    /// <summary>미들웨어 로직을 실행 </summary>
+
+    /// <summary> 미들웨어 로직을 실행 </summary>
     public abstract IAsyncEnumerable<ChatEvent> InvokeAsync(UserInput Input, AgentSession Session, CancellationToken Ct);
 }

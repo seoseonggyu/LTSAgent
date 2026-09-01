@@ -9,6 +9,6 @@ namespace LTSAgent.Backend.Command;
 /// </summary>
 public interface IAgentCommand
 {
-    /// <summary>커맨드를 실행하고 결과 ChatEvent를 스트리밍합니다.</summary>
+    /// <summary> 커맨드를 실행하고 결과 ChatEvent를 스트리밍 </summary>
     IAsyncEnumerable<ChatEvent> ExecuteAsync(string[] Args, AgentSession Session);
 }

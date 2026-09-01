@@ -13,13 +13,13 @@ namespace LTSAgent.Frontend.UI.Messages.ToolRenderers;
 /// </summary>
 public partial class CodeBlock : JsComponentBase
 {
-    /// <summary>도구 메시지</summary>
+    /// <summary> 도구 메시지 </summary>
     [Parameter] public ChatUIMessage.Tool Message { get; set; } = null!;
 
-    /// <summary>code 요소 참조</summary>
+    /// <summary> code 요소 참조 </summary>
     private ElementReference CodeRef;
 
-    /// <summary>도구 이름 키워드 → Prism 언어 클래스 매핑</summary>
+    /// <summary> 도구 이름 키워드 → Prism 언어 클래스 매핑 </summary>
     private static readonly (string Keyword, string Language)[] LanguageMap =
     [
         ("python", "python"),
@@ -30,7 +30,7 @@ public partial class CodeBlock : JsComponentBase
         ("lua",    "lua"),
     ];
 
-    /// <summary>도구 이름에서 Prism 언어를 감지</summary>
+    /// <summary> 도구 이름에서 Prism 언어를 감지 </summary>
     private string DetectedLanguage
     {
         get
@@ -47,10 +47,10 @@ public partial class CodeBlock : JsComponentBase
         }
     }
 
-    /// <summary>Prism.js에 전달할 언어 CSS 클래스</summary>
+    /// <summary> Prism.js에 전달할 언어 CSS 클래스 </summary>
     private string LanguageClass => $"language-{DetectedLanguage}";
 
-    /// <summary>이 도구가 CodeBlock으로 렌더링되어야 하는지 판별</summary>
+    /// <summary> 이 도구가 CodeBlock으로 렌더링되어야 하는지 판별 </summary>
     public static bool IsCodeTool(string ToolName)
     {
         var Lower = ToolName.ToLowerInvariant();
@@ -61,7 +61,7 @@ public partial class CodeBlock : JsComponentBase
     public static ToolBlock.ToolMeta GetInfo(ChatUIMessage.Tool Msg) 
     => new("code", Msg.Name, "font-mono", ChatUIMessage.Tool.GetInputField(Msg.Input, "purpose"));
 
-    /// <summary>권한 다이얼로그에 표시할 요약</summary>
+    /// <summary> 권한 다이얼로그에 표시할 요약 </summary>
     public static string GetPermissionSummary(string InputJson)
     => ChatUIMessage.Tool.GetInputField(InputJson, "purpose");
 
@@ -71,7 +71,7 @@ public partial class CodeBlock : JsComponentBase
             await Module.InvokeVoidAsync("highlightCode", CodeRef);
     }
     
-    /// <summary>JSON Input에서 code 필드를 추출</summary>
+    /// <summary> JSON Input에서 code 필드를 추출 </summary>
     private static string ExtractCode(string JsonInput)
     {
         if (string.IsNullOrEmpty(JsonInput))
@@ -91,7 +91,7 @@ public partial class CodeBlock : JsComponentBase
         return JsonInput;
     }
 
-    /// <summary>출력을 줄 단위로 분리</summary>
+    /// <summary> 출력을 줄 단위로 분리 </summary>
     private string[] OutputLines()
     {
         if (string.IsNullOrEmpty(Message.Content))
@@ -100,7 +100,7 @@ public partial class CodeBlock : JsComponentBase
         return Message.Content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
     }
 
-    /// <summary>출력 줄에 색상을 적용</summary>
+    /// <summary> 출력 줄에 색상을 적용 </summary>
     private static string FormatOutputLine(string Line)
     {
         if (Line.Contains("ERROR", StringComparison.OrdinalIgnoreCase))

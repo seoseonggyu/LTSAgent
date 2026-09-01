@@ -1,5 +1,7 @@
-﻿using LTSAgent.Backend.Chat;
+﻿using System.Diagnostics;
+using LTSAgent.Backend.Chat;
 using LTSAgent.Backend.Conversation;
+using LTSAgent.Backend.Core;
 using Microsoft.Extensions.Hosting;
 
 namespace LTSAgent.Backend.Agent;
@@ -11,16 +13,16 @@ namespace LTSAgent.Backend.Agent;
 /// </summary>
 public sealed class AgentRunner(AgentSession Session) : BackgroundService
 {
-    // 반응형 상태 관리자
+    /// <summary> 반응형 상태 관리자 </summary>
     public ChatStore Store { get; } = new();
     
-    // 사용자 입력을 순서대로 보관하는 메시지 큐
+    /// <summary> 사용자 입력을 순서대로 보관하는 메시지 큐 </summary>
     private readonly Queue<UserInput> MessageQueue = new();
 
-    // 큐에 메시지가 도착하면 BackgroundService 루프를 깨우는 시그널
+    /// <summary> 큐에 메시지가 도착하면 BackgroundService 루프를 깨우는 시그널 </summary>
     private readonly SemaphoreSlim Signal = new(0);
     
-    // ChatEvent 발생 시 UI 스레드에서 처리할 이벤트
+    /// <summary> ChatEvent 발생 시 UI 스레드에서 처리할 이벤트 </summary>
     public Func<ChatEvent, Task> OnChatEvent;
     
     protected override async Task ExecuteAsync(CancellationToken Ct)
@@ -30,26 +32,22 @@ public sealed class AgentRunner(AgentSession Session) : BackgroundService
             // 시그널 대기 — EnqueueMessage 메시지 도착 시 해제
             await Signal.WaitAsync(Ct);
             
-            // 메시지 큐를 순차 처리
+            // 메시지 큐를 순차 처리합니다.
             await DrainQueue();
         }
     }
     
-    /// <summary>
-    /// 메시지를 큐에 추가하고 BackgroundService 루프를 깨움
-    /// </summary>
+    /// <summary> 메시지를 큐에 추가하고 BackgroundService 루프를 깨움 </summary>
     public async Task EnqueueMessage(UserInput Input)
     {      
         // 사용자 메세지 UI를 위해 추가
-        await DispatchEventAsync(new ChatEvent.User(Input.Text));
+        await DispatchEventAsync(new ChatEvent.User(Input.Text, Input.ImageMediaType, Input.ImageBase64));
         
         MessageQueue.Enqueue(Input);
         Signal.Release();
     }
     
-    /// <summary>
-    /// 큐에서 메시지를 하나씩 꺼내 순차적으로 처리
-    /// </summary>
+    /// <summary> 큐에서 메시지를 하나씩 꺼내 순차적으로 처리 </summary>
     private async Task DrainQueue()
     {
         while (MessageQueue.TryDequeue(out UserInput Input))
@@ -68,9 +66,7 @@ public sealed class AgentRunner(AgentSession Session) : BackgroundService
         }
     }
     
-    /// <summary>
-    /// ChatEvent를 UI 스레드로 디스패치
-    /// </summary>
+    /// <summary> ChatEvent를 UI 스레드로 디스패치 </summary>
     private Task DispatchEventAsync(ChatEvent Evt)
     {
         if (OnChatEvent is { } Handler)
